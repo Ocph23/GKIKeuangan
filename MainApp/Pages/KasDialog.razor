@@ -1,0 +1,107 @@
+﻿<MudDialog>
+    <DialogContent>
+        <MudCard>
+            <MudForm Model="@model" @ref="@form" Validation="@(orderValidator.ValidateValue)" ValidationDelay="0">
+                <MudCardContent>
+
+                    <MudDatePicker Label="Flexible Date" Editable="true" @bind-Date="model.Tanggal" ImmediateText="true"
+                                   Placeholder="day.month.year" DateFormat="dd/MM/yyyy HH:mm" />
+
+
+                    <MudAutocomplete T="Akun" Label="Akun" @bind-Value="model.Akun" ToStringFunc="@converterAkun" SearchFunc="@SearchAkun"
+                                     Class="mb-3" Margin="Margin.Dense" AnchorOrigin="Origin.BottomCenter" Variant="Variant.Outlined" Clearable
+                                      AdornmentIcon="@Icons.Material.Filled.Search" AdornmentColor="Color.Primary" />
+
+                     @if (model.Akun != null)
+                    {
+                        <MudTextField @bind-Value="model.Akun.Tipe"
+                                      Disabled=true
+                                      Immediate="true"
+                                      Label="Tipe" />
+
+                    }
+
+                    <MudNumericField T="double" @bind-Value="model.Jumlah"
+                                     For="@(() => model.Jumlah)"
+                                     Immediate="true"
+                                     Label="Jumlah" />
+
+
+                </MudCardContent>
+            </MudForm>
+            <MudCardActions>
+                <MudButton Variant="Variant.Filled" Color="Color.Primary" Class="ml-auto" OnClick="@(async () => await Submit())">Simpan</MudButton>
+                <MudButton OnClick="Cancel">Cancel</MudButton>
+            </MudCardActions>
+        </MudCard>
+    </DialogContent>
+</MudDialog>
+
+
+
+@using FluentValidation
+@using MainApp.Validators
+
+@inject IKasService kasService
+@inject IAkunService akunService
+
+@code {
+    [Inject] ISnackbar Snackbar { get; set; }
+    [CascadingParameter] MudDialogInstance MudDialog { get; set; }
+
+    [Parameter]
+    public Kas model { get; set; } = new Kas();
+
+    MudForm form;
+    KasFluentValidator orderValidator = new KasFluentValidator();
+
+    Func<Akun, string> converterAkun = p => p == null ? "" : $"{p.Kode} - {p.Uraian}";
+
+    IEnumerable<Akun> akuns = Enumerable.Empty<Akun>();
+
+    protected override async Task OnInitializedAsync()
+    {
+        akuns = await akunService.Get();
+    }
+
+
+    private async Task<IEnumerable<Akun>> SearchAkun(string value)
+    {
+        if (!string.IsNullOrEmpty(value))
+            return akuns.Where(x => x.Kode.ToLower().Contains(value.ToLower()) || x.Uraian.ToLower().Contains(value.ToLower()));
+        return akuns;
+    }
+
+    void Cancel() => MudDialog.Cancel();
+
+    private async Task Submit()
+    {
+        await form.Validate();
+
+        if (form.IsValid)
+        {
+
+            try
+            {
+                if (model.Id <= 0)
+                {
+                    var result = await kasService.Post(model);
+                    Snackbar.Add("Tersimpan !");
+                    MudDialog.Close(DialogResult.Ok(result));
+                }
+                else
+                {
+                    var result = await kasService.Put(model.Id, model);
+                    Snackbar.Add("Tersimpan !");
+                    MudDialog.Close(DialogResult.Ok(result));
+                }
+            }
+            catch (Exception ex)
+            {
+                Snackbar.Add(ex.Message, MudBlazor.Severity.Error);
+            }
+
+
+        }
+    }
+}

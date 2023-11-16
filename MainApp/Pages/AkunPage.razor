@@ -1,0 +1,170 @@
+﻿@page "/akun"
+
+@inject IAkunService akunService
+@inject IDialogService DialogService
+
+<div class="mt-15">
+
+    <div class="d-flex justify-content-between align-items-center">
+        <h3>Data Akun</h3>
+        <MudIconButton OnClick="Add" Icon="@Icons.Material.Filled.Add" Variant="Variant.Outlined" Color="Color.Success" Size="Size.Medium" />
+    </div>
+    <MudTable ServerData="@(new Func<TableState, Task<TableData<Akun>>>(ServerReload))" Dense="true" Hover="true"
+              @ref="table">
+        <ToolBarContent>
+            <MudSpacer />
+            <MudTextField T="string" ValueChanged="@(s=>OnSearch(s))" Placeholder="Search" Adornment="Adornment.Start"
+                          AdornmentIcon="@Icons.Material.Filled.Search" IconSize="Size.Medium" Class="mt-0"></MudTextField>
+        </ToolBarContent>
+        <HeaderContent>
+            <MudTh>
+                <MudTableSortLabel SortLabel="nr_field" T="Akun">Kode</MudTableSortLabel>
+            </MudTh>
+            <MudTh>
+                <MudTableSortLabel SortLabel="name_field" T="Akun">Uraian</MudTableSortLabel>
+            </MudTh>
+            <MudTh>
+                <MudTableSortLabel SortLabel="tipe_field" T="Akun">Tipe</MudTableSortLabel>
+            </MudTh>
+            <MudTh>
+                <MudTableSortLabel SortLabel="kategopri_field" T="Kategori">Kategori</MudTableSortLabel>
+            </MudTh>
+            <MudTh>
+                <MudTableSortLabel SortLabel="description_field" T="Akun">Deskripsi</MudTableSortLabel>
+            </MudTh>
+            <MudTh></MudTh>
+        </HeaderContent>
+        <RowTemplate>
+            <MudTd DataLabel="Nr">@context.Kode</MudTd>
+                <MudTd DataLabel="Name">@context.Uraian</MudTd>
+                <MudTd DataLabel="Tipe">@context.Tipe</MudTd>
+                <MudTd DataLabel="Kategori">@context.Kategori.Nama</MudTd>
+                <MudTd DataLabel="Deskripsi">@context.Keterangan</MudTd>
+                <MudTd Style="width:150px">
+                    <AuthorizeView Context="authContext">
+                        <MudIconButton OnClick="@(()=> Edit(context))" Color="Color.Warning" Icon="@Icons.Material.Filled.Edit"></MudIconButton>
+                        <MudIconButton OnClick="@(()=> Delete(context))" Color="Color.Error" Icon="@Icons.Material.Filled.DeleteForever"></MudIconButton>
+                    </AuthorizeView>
+                </MudTd>
+            </RowTemplate>
+            <NoRecordsContent>
+                <MudText>No matching records found</MudText>
+            </NoRecordsContent>
+            <LoadingContent>
+                <MudText>Loading...</MudText>
+            </LoadingContent>
+            <PagerContent>
+                <MudTablePager />
+            </PagerContent>
+        </MudTable>
+    </div>
+
+
+    @code {
+
+
+    [Inject] ISnackbar? Snackbar { get; set; }
+
+    private IEnumerable<Akun> pagedData;
+    private MudTable<Akun> table;
+
+    private int totalItems;
+    private string searchString;
+
+
+   
+
+    private async Task<TableData<Akun>> ServerReload(TableState state)
+    {
+        IEnumerable<Akun>? data = await akunService.Get();
+        await Task.Delay(300);
+        data = data.Where(element =>
+        {
+            if (string.IsNullOrWhiteSpace(searchString))
+                return true;
+            if (element.Uraian.Contains(searchString, StringComparison.OrdinalIgnoreCase))
+                return true;
+            if (!string.IsNullOrEmpty(element.Keterangan) && element.Keterangan.Contains(searchString, StringComparison.OrdinalIgnoreCase))
+                return true;
+            return false;
+        }).ToArray();
+        totalItems = data.Count();
+        switch (state.SortLabel)
+        {
+            case "nr_field":
+                data = data.OrderByDirection(state.SortDirection, o => o.Kode);
+                break;
+            case "description_field":
+                data = data.OrderByDirection(state.SortDirection, o => o.Keterangan);
+                break;
+            case "name_field":
+                data = data.OrderByDirection(state.SortDirection, o => o.Uraian);
+                break;
+        }
+
+        pagedData = data.Skip(state.Page * state.PageSize).Take(state.PageSize).ToArray();
+        return new TableData<Akun>() { TotalItems = totalItems, Items = pagedData };
+    }
+    private void OnSearch(string text)
+    {
+        searchString = text;
+        table.ReloadServerData();
+    }
+
+    async Task Add()
+    {
+        var options = new DialogOptions { MaxWidth = MaxWidth.Small, FullWidth = true, DisableBackdropClick = true, CloseOnEscapeKey = true };
+        var resultDialog = await DialogService.ShowAsync<AkunDialog>("Tambah", options);
+        var result = await resultDialog.Result;
+        if (result != null)
+        {
+            await table.ReloadServerData();
+        }
+    }
+
+
+    async Task Edit(Akun model)
+    {
+        var data = new DialogParameters();
+        data.Add("model", model);
+        var options = new DialogOptions { MaxWidth = MaxWidth.Small, FullWidth = true, DisableBackdropClick = true, CloseOnEscapeKey = true };
+        var resultDialog = await DialogService.ShowAsync<AkunDialog>("Tambah", data, options);
+        var result = await resultDialog.Result;
+        if (result != null)
+        {
+            await table.ReloadServerData();
+        }
+    }
+
+    async Task Delete(Akun model)
+    {
+
+        var parameters = new DialogParameters<Dialog>();
+        parameters.Add(x => x.ContentText, "Yakin Hapus Data ?");
+        parameters.Add(x => x.ButtonText, "Delete");
+        parameters.Add(x => x.Color, Color.Error);
+        var options = new DialogOptions() { CloseButton = true, MaxWidth = MaxWidth.Small };
+        var dialog = await DialogService.ShowAsync<Dialog>("Delete", parameters, options);
+        var result = await dialog.Result;
+        if (!result.Canceled)
+        {
+            try
+            {
+                var deleted = await akunService.Delete(model.Id);
+                if (deleted)
+                {
+                    await table.ReloadServerData();
+                    Snackbar?.Add("Data berhasil dihapus !", MudBlazor.Severity.Error);
+                    return;
+                }
+                throw new SystemException("Data tidak berhasil disimpan !");
+            }
+            catch (Exception ex)
+            {
+                Snackbar?.Add(ex.Message, MudBlazor.Severity.Error);
+            }
+
+
+        }
+    }
+}

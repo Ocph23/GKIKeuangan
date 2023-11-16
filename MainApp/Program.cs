@@ -25,6 +25,9 @@ builder.Services.AddScoped<AuthenticationStateProvider, RevalidatingIdentityAuth
 builder.Services.AddSingleton<WeatherForecastService>();
 builder.Services.AddMudServices();
 builder.Services.AddScoped<IKategoriService, KategoriService>();
+builder.Services.AddScoped<IAkunService, AkunService>();
+builder.Services.AddScoped<IPeriodeService, PeriodeService>();
+builder.Services.AddScoped<IKasService, KasService>();
 
 
 var app = builder.Build();

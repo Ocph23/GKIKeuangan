@@ -1,0 +1,100 @@
+﻿<MudDialog>
+    <DialogContent>
+        <MudCard>
+            <MudForm Model="@model" @ref="@form" Validation="@(orderValidator.ValidateValue)" ValidationDelay="0">
+                <MudCardContent>
+                    <MudSelect T="Kategori" Label="Tipe Akun" @bind-Value="@model.Kategori" For="@(()=> model.Kategori)">
+                        @foreach (var item in kategoris)
+                        {
+                            <MudSelectItem Value="item">@($"{item.Kode} -  {item.Nama}")</MudSelectItem>
+                        }
+                    </MudSelect>
+                    <MudTextField @bind-Value="model.Kode"
+                                  For="@(() => model.Kode)"
+                                  Immediate="true"
+                                  Label="Kode" />
+
+                    <MudTextField @bind-Value="model.Uraian"
+                                  For="@(() => model.Uraian)"
+                                  Immediate="true"
+                                  Label="Uraian" />
+                    <MudSelect T="AkunType" @bind-Value="model.Tipe" Label="Tipe Akun" For="@(()=> model.Tipe)">
+                        @foreach (var item in Enum.GetValues(typeof(AkunType)).Cast<AkunType>())
+                        {
+                            <MudSelectItem Value="item">@item.ToString()</MudSelectItem>
+                        }
+                    </MudSelect>
+
+
+                    <MudTextField @bind-Value="model.Keterangan"
+                                  For="@(() => model.Keterangan)"
+                                  Immediate="true"
+                                  Label="Deskripsi" />
+                </MudCardContent>
+            </MudForm>
+            <MudCardActions>
+                <MudButton Variant="Variant.Filled" Color="Color.Primary" Class="ml-auto" OnClick="@(async () => await Submit())">Simpan</MudButton>
+                <MudButton OnClick="Cancel">Cancel</MudButton>
+            </MudCardActions>
+        </MudCard>
+    </DialogContent>
+</MudDialog>
+
+
+
+@using FluentValidation
+@using MainApp.Validators
+
+@inject IAkunService akunService
+@inject IKategoriService kategoriService
+@code {
+    [Inject] ISnackbar Snackbar { get; set; }
+    [CascadingParameter] MudDialogInstance MudDialog { get; set; }
+
+    [Parameter]
+    public Akun model { get; set; } = new Akun();
+
+    MudForm form;
+    AkunFluentValidator orderValidator = new AkunFluentValidator();
+    private IEnumerable<Kategori> kategoris;
+
+    protected override async Task OnInitializedAsync()
+    {
+
+
+        kategoris = await kategoriService.Get();
+    }
+
+    void Cancel() => MudDialog.Cancel();
+
+    private async Task Submit()
+    {
+        await form.Validate();
+
+        if (form.IsValid)
+        {
+
+            try
+            {
+                if (model.Id <= 0)
+                {
+                    var result = await akunService.Post(model);
+                    Snackbar.Add("Tersimpan !");
+                    MudDialog.Close(DialogResult.Ok(result));
+                }
+                else
+                {
+                    var result = await akunService.Put(model.Id, model);
+                    Snackbar.Add("Tersimpan !");
+                    MudDialog.Close(DialogResult.Ok(result));
+                }
+            }
+            catch (Exception ex)
+            {
+                Snackbar.Add(ex.Message, MudBlazor.Severity.Error);
+            }
+
+
+        }
+    }
+}

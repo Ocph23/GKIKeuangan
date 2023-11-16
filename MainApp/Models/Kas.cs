@@ -3,8 +3,9 @@ namespace MainApp;
 public class Kas
 {
     public int Id { get; set; }
+    public DateTime? Tanggal { get; set; } = DateTime.Now;
 
-    public required Akun Akun { get; set; }
+    public Akun? Akun { get; set; }
 
     public double Jumlah { get; set; }
 

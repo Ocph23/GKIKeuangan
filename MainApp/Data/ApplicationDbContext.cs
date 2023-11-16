@@ -20,6 +20,7 @@ namespace MainApp.Data
         {
             builder.Entity<Kategori>().HasIndex(x => x.Kode).IsUnique();
             builder.Entity<Akun>().HasIndex(x => x.Kode).IsUnique();
+            builder.Entity<Periode>().HasIndex(x => x.Tahun).IsUnique();
             base.OnModelCreating(builder);
         }
     }

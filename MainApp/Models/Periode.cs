@@ -7,7 +7,7 @@ public class Periode{
 
     public bool Aktif { get; set; }
 
-    public int Catatan { get; set; }
+    public string? Catatan { get; set; }
 
     public ICollection<AnggaranBelanjaItem> RencanaAnggaranBalanja { get; set; } = new List<AnggaranBelanjaItem>();
 }

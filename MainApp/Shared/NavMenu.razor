@@ -4,12 +4,18 @@
         <MudText Typo="Typo.body2" Class="px-4 mud-text-secondary">Icons</MudText>
         <MudDivider Class="my-2" />
         <MudNavLink Href="/dashboard" Icon="@Icons.Material.Filled.Dashboard">Dashboard</MudNavLink>
-        <MudNavLink Href="/kategori" Icon="@Icons.Material.Filled.Storage">Kategori Akun</MudNavLink>
-        <MudNavLink Href="/counter" Icon="@Icons.Material.Filled.Storage">Servers</MudNavLink>
-        <MudNavLink Href="/billing" Icon="@Icons.Material.Filled.Receipt" Disabled="true">Billing</MudNavLink>
-        <MudNavGroup Title="Settings" Icon="@Icons.Material.Filled.Settings" Expanded="true">
-            <MudNavLink Href="/users" Icon="@Icons.Material.Filled.People" IconColor="Color.Success">Users</MudNavLink>
-            <MudNavLink Href="/security" Icon="@Icons.Material.Filled.Security" IconColor="Color.Info">Security</MudNavLink>
+        <MudNavLink Href="/periode" Icon="@Icons.Material.Filled.CalendarViewMonth">Periode</MudNavLink>
+        <MudNavGroup Title="Akun" Icon="@Icons.Material.Filled.Settings" Expanded="true">
+            <MudNavLink Href="/kategori" Icon="@Icons.Material.Filled.Storage">Kategori Akun</MudNavLink>
+            <MudNavLink Href="/akun" Icon="@Icons.Material.Filled.Storage">Akun</MudNavLink>
         </MudNavGroup>
+
+        <MudNavLink Href="/rencanaanggaran" Icon="@Icons.Material.Filled.Receipt">Rencana Anggaran</MudNavLink>
+        <MudNavLink Href="/kas" Icon="@Icons.Material.Filled.Money">Kas</MudNavLink>
+        <MudNavGroup Title="Laporan" Icon="@Icons.Material.Filled.Report" Expanded="true">
+            <MudNavLink Href="/kategori" Icon="@Icons.Material.Filled.Storage">Kategori Akun</MudNavLink>
+            <MudNavLink Href="/akun" Icon="@Icons.Material.Filled.Storage">Akun</MudNavLink>
+        </MudNavGroup>
+        <MudNavLink Href="/akun" Icon="@Icons.Material.Filled.People" IconColor="Color.Success">Users</MudNavLink>
     </MudNavMenu>
 </MudPaper>
