@@ -1,0 +1,80 @@
+﻿<MudDialog>
+    <DialogContent>
+        <MudCard>
+            <MudForm Model="@model" @ref="@form" Validation="@(orderValidator.ValidateValue)" ValidationDelay="0">
+                <MudCardContent>
+                    <MudTextField @bind-Value="model.Kode"
+                                  For="@(() => model.Kode)"
+                                  Immediate="true"
+                                  Label="Kode" />
+
+                    <MudTextField @bind-Value="model.Nama"
+                                  For="@(() => model.Nama)"
+                                  Immediate="true"
+                                  Label="Nama" />
+
+                    <MudTextField @bind-Value="model.Deskripsi"
+                                  For="@(() => model.Deskripsi)"
+                                  Immediate="true"
+                                  Label="Deskripsi" />
+                </MudCardContent>
+            </MudForm>
+            <MudCardActions>
+                <MudButton Variant="Variant.Filled" Color="Color.Primary" Class="ml-auto" OnClick="@(async () => await Submit())">Simpan</MudButton>
+                <MudButton OnClick="Cancel">Cancel</MudButton>
+            </MudCardActions>
+        </MudCard>
+    </DialogContent>
+</MudDialog>
+
+
+
+@using FluentValidation
+@using MainApp.Validators
+
+@inject IKategoriService kategoriService
+
+@code {
+    [Inject] ISnackbar Snackbar { get; set; }
+    [CascadingParameter] MudDialogInstance MudDialog { get; set; }
+
+    [Parameter]
+    public Kategori model { get; set; } = new Kategori();
+
+    MudForm form;
+    KategoriFluentValidator orderValidator = new KategoriFluentValidator();
+
+
+    void Cancel() => MudDialog.Cancel();
+
+    private async Task Submit()
+    {
+        await form.Validate();
+
+        if (form.IsValid)
+        {
+
+            try
+            {
+                if (model.Id <= 0)
+                {
+                    var result = await kategoriService.Post(model);
+                    Snackbar.Add("Tersimpan !");
+                    MudDialog.Close(DialogResult.Ok(result));
+                }
+                else
+                {
+                    var result = await kategoriService.Put(model.Id, model);
+                    Snackbar.Add("Tersimpan !");
+                    MudDialog.Close(DialogResult.Ok(result));
+                }
+            }
+            catch (Exception ex)
+            {
+                Snackbar.Add(ex.Message, MudBlazor.Severity.Error);
+            }
+
+
+        }
+    }
+}
