@@ -22,9 +22,10 @@
             <MudTh>
                 <MudTableSortLabel SortLabel="name_field" T="Periode">Aktif</MudTableSortLabel>
             </MudTh>
-            <MudTh>
-                <MudTableSortLabel SortLabel="description_field" T="Periode">Catatan</MudTableSortLabel>
-            </MudTh>
+            <MudTh>Jemaat</MudTh>
+            <MudTh>YPK</MudTh>
+            <MudTh>Klasis</MudTh>
+            <MudTh>Sinode</MudTh>
             <MudTh></MudTh>
         </HeaderContent>
         <RowTemplate>
@@ -32,10 +33,13 @@
                 <MudTd DataLabel="Aktif">
                     <MudCheckBox Disabled="true" @bind-Checked="context.Aktif"></MudCheckBox>
                 </MudTd>
-                <MudTd DataLabel="Description">@context.Catatan</MudTd>
-                <MudTd Style="width:150px">
-                    <AuthorizeView Context="authContext">
-                    @if (context.Aktif)
+                <MudTd DataLabel="Description">@context.Jemaat %</MudTd>
+            <MudTd DataLabel="Description">@context.YPK %</MudTd>
+            <MudTd DataLabel="Description">@context.Klasis %</MudTd>
+            <MudTd DataLabel="Description">@context.Sinode %</MudTd>
+            <MudTd Style="width:150px">
+                <AuthorizeView Context="authContext">
+                    @if(context.Aktif)
                     {
                         <MudIconButton OnClick="@(()=> Edit(context))" Color="Color.Warning" Icon="@Icons.Material.Filled.Edit"></MudIconButton>
                         <MudIconButton OnClick="@(()=> Delete(context))" Color="Color.Error" Icon="@Icons.Material.Filled.DeleteForever"></MudIconButton>

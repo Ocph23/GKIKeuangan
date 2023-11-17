@@ -1,0 +1,59 @@
+/*@page {
+    margin: 2cm;
+}*/
+
+/* target the first page only */
+/*@page :first {
+    margin-top: 6cm;
+}*/
+
+/* target left (even-numbered) pages only */
+/*@page :left {
+    margin-right: 4cm;
+}*/
+
+/* target right (odd-numbered) pages only */
+/*@page :right {
+    margin-left: 4cm;
+}*/
+
+h1,h2,h3,h4{
+    font-size: 14px !important;
+    padding:0px;
+    margin:0px;
+    line-height:1;
+}
+
+header, footer, aside, nav, form, iframe, .menu, .hero, .adslot, .mud-appbar {
+    display: none !important;
+}
+
+
+.no-print {
+    display: none !important;
+}
+
+.just-print {
+    display: block !important;
+}
+
+
+.mud-main-content {
+    padding-top: 0px !important;
+    margin: 0px !important;
+}
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+td,tr,th{
+    padding:2px;
+    border:1px solid silver;
+    font-size:11px;
+}
+
+th{
+    text-align:center;
+}

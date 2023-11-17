@@ -1,0 +1,96 @@
+﻿<MudDialog>
+    <DialogContent>
+        <MudCard>
+            <MudForm Model="@model" @ref="@form" Validation="@(orderValidator.ValidateValue)" ValidationDelay="0">
+                <MudCardContent>
+
+                    <MudSelect T="int" Label="Periode Kas (Bulan)" For="@(() => model.Bulan)" @bind-Value="model.Bulan">
+                        @foreach (var item in Enumerable.Range(1, 12))
+                        {
+                            <MudSelectItem Value="item">@item.ToString()</MudSelectItem>
+                        }
+                    </MudSelect>
+
+                    <MudDatePicker Label="Mulai" Editable="true" @bind-Date="Mulai" ImmediateText="true"
+                                   For="@(() => Mulai)"
+                                   Placeholder="day/month/year" DateFormat="dd/MM/yyyy" />
+
+                    <MudDatePicker  Label="Berakhir" Editable="true" @bind-Date="Akhir" ImmediateText="true"
+                                   For="@(() => Akhir)"
+                                   Placeholder="day/month/year" DateFormat="dd/MM/yyyy" />
+
+                    <MudTextField @bind-Value="model.PemegangKas"
+                                  For="@(() => model.PemegangKas)"
+                                  Immediate="true"
+                                  Label="Pemegang Kas" />
+
+
+                </MudCardContent>
+            </MudForm>
+            <MudCardActions>
+                <MudButton Variant="Variant.Filled" Color="Color.Primary" Class="ml-auto" OnClick="@(async () => await Submit())">Simpan</MudButton>
+                <MudButton OnClick="Cancel">Cancel</MudButton>
+            </MudCardActions>
+        </MudCard>
+    </DialogContent>
+</MudDialog>
+
+
+
+@using FluentValidation
+@using MainApp.Validators
+
+@inject IKasService kasService
+
+@code {
+    [Inject] ISnackbar Snackbar { get; set; }
+    [CascadingParameter] MudDialogInstance MudDialog { get; set; }
+
+    [Parameter]
+    public PeriodeKas model { get; set; } = new PeriodeKas();
+
+    MudForm form;
+    PeriodeKasFluentValidator orderValidator = new PeriodeKasFluentValidator();
+
+    DateTime? Mulai;
+    DateTime? Akhir;
+
+    protected override async Task OnInitializedAsync()
+    {
+    }
+
+    void Cancel() => MudDialog.Cancel();
+
+    private async Task Submit()
+    {
+        await form.Validate();
+
+        if (form.IsValid)
+        {
+
+            try
+            {
+                if (model.Id <= 0)
+                {
+                    model.Mulai = DateOnly.FromDateTime(Mulai.Value);
+                    model.Berakhir = DateOnly.FromDateTime(Akhir.Value);
+                    var result = await kasService.BuatKasBaru(model);
+                    Snackbar.Add("Tersimpan !");
+                    MudDialog.Close(DialogResult.Ok(result));
+                }
+                else
+                {
+                    var result = await kasService.TutupKas(model, DateOnly.FromDateTime(DateTime.Now));
+                    Snackbar.Add("Tersimpan !");
+                    MudDialog.Close(DialogResult.Ok(result));
+                }
+            }
+            catch (Exception ex)
+            {
+                Snackbar.Add(ex.Message, MudBlazor.Severity.Error);
+            }
+
+
+        }
+    }
+}

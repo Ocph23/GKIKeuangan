@@ -51,8 +51,8 @@ public class PeriodeService : IPeriodeService
     {
         try
         {
-            var data = dbcontext.DataPeriode.Include(x=>x.RencanaAnggaranBalanja)
-                .ThenInclude(x=>x.Akun).SingleOrDefault(x => x.Id == id);
+            var data = dbcontext.DataPeriode.Include(x => x.RencanaAnggaranBalanja)
+                .ThenInclude(x => x.Akun).SingleOrDefault(x => x.Id == id);
             return Task.FromResult(result: data)!;
         }
         catch (System.Exception)
@@ -68,8 +68,8 @@ public class PeriodeService : IPeriodeService
             if (model.Tahun > DateTime.Now.Year)
                 throw new SystemException("Belum saatnya membuat periode baru !");
 
-            var oldPeriode = dbcontext.DataPeriode.SingleOrDefault(x=>x.Aktif);
-            if(oldPeriode != null)
+            var oldPeriode = dbcontext.DataPeriode.SingleOrDefault(x => x.Aktif);
+            if (oldPeriode != null)
             {
                 oldPeriode.Aktif = false;
             }
@@ -80,13 +80,14 @@ public class PeriodeService : IPeriodeService
         }
         catch (DbUpdateException ex)
         {
-            if(ex.InnerException!=null && ex.InnerException.Message.Contains("duplicate key value"))
+            if (ex.InnerException != null && ex.InnerException.Message.Contains("duplicate key value"))
             {
                 throw new Exception($"Periode Tahun {model.Tahun} Sudah Ada.");
             }
             throw;
         }
-        catch (Exception){
+        catch (Exception)
+        {
             throw;
         }
     }
@@ -95,7 +96,31 @@ public class PeriodeService : IPeriodeService
     {
         try
         {
-            var data = dbcontext.DataPeriode.Include(x=>x.RencanaAnggaranBalanja).SingleOrDefault(x => x.Id == id);
+            var data = dbcontext.DataPeriode.SingleOrDefault(x => x.Id == id);
+            ArgumentNullException.ThrowIfNull(data, "Data Tidak Ditemukan");
+
+            data.Tahun = model.Tahun;
+            data.Aktif = model.Aktif;
+            data.Jemaat = model.Jemaat;
+            data.YPK = model.YPK;
+            data.Klasis = model.Klasis;
+            data.Sinode = model.Sinode;
+
+
+
+            dbcontext.SaveChanges();
+            return Task.FromResult(true);
+        }
+        catch (System.Exception)
+        {
+            throw;
+        }
+    }
+    public Task<bool> PutAnggaran(int id, Periode model)
+    {
+        try
+        {
+            var data = dbcontext.DataPeriode.Include(x => x.RencanaAnggaranBalanja).SingleOrDefault(x => x.Id == id);
             ArgumentNullException.ThrowIfNull(data, "Data Tidak Ditemukan");
             dbcontext.Entry(data).CurrentValues.SetValues(model);
             dbcontext.SaveChanges();
@@ -106,4 +131,6 @@ public class PeriodeService : IPeriodeService
             throw;
         }
     }
+
+
 }

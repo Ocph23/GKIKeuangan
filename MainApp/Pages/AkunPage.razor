@@ -18,6 +18,9 @@
         </ToolBarContent>
         <HeaderContent>
             <MudTh>
+                <MudTableSortLabel SortLabel="kategopri_field" T="Kategori">Kategori</MudTableSortLabel>
+            </MudTh>
+            <MudTh>
                 <MudTableSortLabel SortLabel="nr_field" T="Akun">Kode</MudTableSortLabel>
             </MudTh>
             <MudTh>
@@ -26,20 +29,29 @@
             <MudTh>
                 <MudTableSortLabel SortLabel="tipe_field" T="Akun">Tipe</MudTableSortLabel>
             </MudTh>
-            <MudTh>
-                <MudTableSortLabel SortLabel="kategopri_field" T="Kategori">Kategori</MudTableSortLabel>
-            </MudTh>
-            <MudTh>
-                <MudTableSortLabel SortLabel="description_field" T="Akun">Deskripsi</MudTableSortLabel>
-            </MudTh>
+            <MudTh>Jemaat</MudTh>
+            <MudTh>YPK</MudTh>
+            <MudTh>Klasis</MudTh>
+            <MudTh>Sinode</MudTh>
             <MudTh></MudTh>
         </HeaderContent>
         <RowTemplate>
+                <MudTd DataLabel="kategori">@context.Kategori.Kode</MudTd>
             <MudTd DataLabel="Nr">@context.Kode</MudTd>
                 <MudTd DataLabel="Name">@context.Uraian</MudTd>
                 <MudTd DataLabel="Tipe">@context.Tipe</MudTd>
-                <MudTd DataLabel="Kategori">@context.Kategori.Nama</MudTd>
-                <MudTd DataLabel="Deskripsi">@context.Keterangan</MudTd>
+                <MudTd DataLabel="Jemaat">
+                    <MudCheckBox @bind-Checked="context.Jemaat"></MudCheckBox>
+                </MudTd>
+                <MudTd DataLabel="YPK">
+                    <MudCheckBox @bind-Checked="context.YPK"></MudCheckBox>
+                </MudTd>
+                <MudTd DataLabel="Klasis">
+                    <MudCheckBox @bind-Checked="context.Klasis"></MudCheckBox>
+                </MudTd>
+                <MudTd DataLabel="Sinode">
+                    <MudCheckBox @bind-Checked="context.Sinode"></MudCheckBox>
+                </MudTd>
                 <MudTd Style="width:150px">
                     <AuthorizeView Context="authContext">
                         <MudIconButton OnClick="@(()=> Edit(context))" Color="Color.Warning" Icon="@Icons.Material.Filled.Edit"></MudIconButton>
@@ -72,12 +84,13 @@
     private string searchString;
 
 
-   
 
     private async Task<TableData<Akun>> ServerReload(TableState state)
     {
         IEnumerable<Akun>? data = await akunService.Get();
         await Task.Delay(300);
+
+        data = data.OrderBy(x => x.Kategori.Kode).ThenBy(x => x.Kode);
         data = data.Where(element =>
         {
             if (string.IsNullOrWhiteSpace(searchString))

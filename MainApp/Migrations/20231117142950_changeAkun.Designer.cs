@@ -3,6 +3,7 @@ using System;
 using MainApp.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
@@ -11,9 +12,11 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace MainApp.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20231117142950_changeAkun")]
+    partial class changeAkun
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -146,49 +149,6 @@ namespace MainApp.Migrations
                         .IsUnique();
 
                     b.ToTable("DataKategori");
-                });
-
-            modelBuilder.Entity("MainApp.Models.PeriodeKas", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("integer");
-
-                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
-
-                    b.Property<DateOnly>("Berakhir")
-                        .HasColumnType("date");
-
-                    b.Property<int>("Bulan")
-                        .HasColumnType("integer");
-
-                    b.Property<DateOnly>("Mulai")
-                        .HasColumnType("date");
-
-                    b.Property<string>("PemegangKas")
-                        .IsRequired()
-                        .HasColumnType("text");
-
-                    b.Property<double>("Penerimaan")
-                        .HasColumnType("double precision");
-
-                    b.Property<double>("Pengeluaran")
-                        .HasColumnType("double precision");
-
-                    b.Property<int>("PeriodeId")
-                        .HasColumnType("integer");
-
-                    b.Property<double>("SaldoLalu")
-                        .HasColumnType("double precision");
-
-                    b.Property<DateOnly?>("TanggalPenutupan")
-                        .HasColumnType("date");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("PeriodeId");
-
-                    b.ToTable("PeriodeKas");
                 });
 
             modelBuilder.Entity("MainApp.Periode", b =>
@@ -459,17 +419,6 @@ namespace MainApp.Migrations
                         .HasForeignKey("AkunId");
 
                     b.Navigation("Akun");
-                });
-
-            modelBuilder.Entity("MainApp.Models.PeriodeKas", b =>
-                {
-                    b.HasOne("MainApp.Periode", "Periode")
-                        .WithMany()
-                        .HasForeignKey("PeriodeId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("Periode");
                 });
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRoleClaim<string>", b =>

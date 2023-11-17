@@ -6,5 +6,6 @@ public interface IPeriodeService
     Task<Periode> GetById(int id);
     Task<Periode> Post(Periode model);
     Task<bool> Put(int id, Periode model);
+    Task<bool> PutAnggaran(int id, Periode model);
     Task<bool> Delete(int id);
 }

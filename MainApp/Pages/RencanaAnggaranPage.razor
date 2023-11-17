@@ -1,11 +1,13 @@
 ﻿@page "/rencanaanggaran"
+@using MainApp.Models
 
-
-<div class="mt-15">
-
+<div class="mt-15 no-print">
     <div class="d-flex justify-content-between align-items-center">
         <h3>Rencana Anggaran Belanja</h3>
-        <MudIconButton Disabled="@(!IsEditable())" OnClick="Save" Icon="@Icons.Material.Filled.Save" Variant="Variant.Outlined" Color="Color.Success" Size="Size.Medium" />
+        <div>
+            <MudIconButton Disabled="@(!IsEditable())" OnClick="Save" Icon="@Icons.Material.Filled.Save" Variant="Variant.Outlined" Color="Color.Success" Size="Size.Medium" />
+            <MudIconButton Disabled="@(dataPrint.Count()<=0)" OnClick="Print" Icon="@Icons.Material.Filled.Print" Variant="Variant.Outlined" Color="Color.Warning" Size="Size.Medium" />
+        </div>
     </div>
     <MudTable ServerData="@(new Func<TableState, Task<TableData<AnggaranBelanjaItem>>>(ServerReload))" Dense="true" Hover="true"
               @ref="table">
@@ -31,10 +33,10 @@
                 <MudTableSortLabel T="AnggaranBelanjaItem">Kegiatan</MudTableSortLabel>
             </MudTh>
             <MudTh>
-                <MudTableSortLabel  T="Kategori">Nilai</MudTableSortLabel>
+                <MudTableSortLabel T="Kategori">Nilai</MudTableSortLabel>
             </MudTh>
             <MudTh>
-                <MudTableSortLabel  T="AnggaranBelanjaItem">Jumlah</MudTableSortLabel>
+                <MudTableSortLabel T="AnggaranBelanjaItem">Jumlah</MudTableSortLabel>
             </MudTh>
             <MudTh></MudTh>
         </HeaderContent>
@@ -61,11 +63,11 @@
         </MudTable>
     </div>
 
-
-
+    <RencanaAnggaranPrint Periode="model" Datas="dataPrint" />
 
 @inject IAkunService akunService
 @inject IDialogService DialogService
+@inject IJSRuntime Js
 
     @code {
 
@@ -73,6 +75,7 @@
     [Inject] ISnackbar? Snackbar { get; set; }
     [Inject] IPeriodeService? PeriodeService { get; set; }
 
+    private IEnumerable<RencanaAnggaranModel> dataPrint = Enumerable.Empty<RencanaAnggaranModel>();
     private IEnumerable<AnggaranBelanjaItem> pagedData = Enumerable.Empty<AnggaranBelanjaItem>();
     private IEnumerable<Periode> periodes;
     private IEnumerable<Akun> akuns;
@@ -99,7 +102,7 @@
     async Task OnSelectPeriode(Periode p)
     {
         model = await PeriodeService.GetById(p.Id);
-        if (model!=null)
+        if (model != null)
         {
             var accountNotInModel = akuns.Where(z => !model.RencanaAnggaranBalanja.Any(x => x.Akun.Id == z.Id));
             foreach (var item in accountNotInModel)
@@ -108,7 +111,39 @@
             }
 
             await table.ReloadServerData();
+
+            //Print
+            if (accountNotInModel.Count() <= 0)
+            {
+                var d = new List<RencanaAnggaranModel>();
+                foreach (var item in model.RencanaAnggaranBalanja)
+                {
+                    d.Add(new RencanaAnggaranModel(model)
+                        {
+                            KodeKategori = item.Akun.Kategori.Kode,
+                            Kategori = item.Akun.Kategori.Nama,
+                            Kegiatan = item.Kegiatan,
+                            Nilai = item.Nilai,
+                            Kode = item.Akun.Kode,
+                            Uraian = item.Akun.Uraian,
+                            IsJemaat = item.Akun.Jemaat,
+                            IsYPK = item.Akun.YPK,
+                            IsKlasis = item.Akun.Klasis,
+                            IsSinode = item.Akun.Sinode,
+                        });
+
+                }
+
+                dataPrint = d.ToList();
+            }
+
+
         }
+
+
+
+
+
     }
 
 
@@ -117,7 +152,7 @@
 
         if (model != null)
         {
-            IEnumerable<AnggaranBelanjaItem>? data = model.RencanaAnggaranBalanja.OrderBy(x=>x.Akun.Kode);
+            IEnumerable<AnggaranBelanjaItem>? data = model.RencanaAnggaranBalanja.OrderBy(x => x.Akun.Kode);
             await Task.Delay(300);
             data = data.Where(element =>
             {
@@ -159,7 +194,7 @@
     {
         try
         {
-            var updated = await PeriodeService.Put(model.Id, model);
+            var updated = await PeriodeService.PutAnggaran(model.Id, model);
             if (updated)
             {
                 Snackbar.Add("Data Tersimpan ", Severity.Success);
@@ -170,4 +205,10 @@
             Snackbar.Add(ex.Message, Severity.Error);
         }
     }
+
+    async Task Print()
+    {
+        await Js.InvokeVoidAsync("print");
+    }
+
 }

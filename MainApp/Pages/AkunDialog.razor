@@ -25,6 +25,28 @@
                         }
                     </MudSelect>
 
+                    <MudCheckBox @bind-Checked="model.Jemaat"
+                                  For="@(() => model.Jemaat)"
+                                  Immediate="true"
+                                  Label="Alokasi Jemaat" />
+
+
+                    <MudCheckBox @bind-Checked="model.YPK"
+                                 For="@(() => model.YPK)"
+                                 Immediate="true"
+                                 Label="Alokasi YPK" />
+
+                    <MudCheckBox @bind-Checked="model.Klasis"
+                                 For="@(() => model.Klasis)"
+                                 Immediate="true"
+                                 Label="Alokasi Klasis" />
+
+
+                    <MudCheckBox @bind-Checked="model.Sinode"
+                                 For="@(() => model.Sinode)"
+                                 Immediate="true"
+                                 Label="Alokasi Sinode" />
+
 
                     <MudTextField @bind-Value="model.Keterangan"
                                   For="@(() => model.Keterangan)"

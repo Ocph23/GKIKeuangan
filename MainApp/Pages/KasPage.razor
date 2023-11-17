@@ -5,8 +5,8 @@
 
     <div class="d-flex justify-content-between align-items-center">
         <h3>Kas</h3>
-        <MudIconButton Disabled=@(isDisable) OnClick="Add" Icon="@Icons.Material.Filled.Add" Variant="Variant.Outlined" Color="Color.Success" Size="Size.Medium" />
-    </div>
+        <MudIconButton Disabled=@(periodeKasSelected==null || periodeKasSelected.TanggalPenutupan!=null|| DateOnly.FromDateTime(DateTime.Now)> periodeKasSelected.Berakhir ) OnClick="Add" Icon="@Icons.Material.Filled.Add" Variant="Variant.Outlined" Color="Color.Success" Size="Size.Medium" />
+        </div>
     <MudTable Class="p-2" ServerData="@(new Func<TableState, Task<TableData<Kas>>>(ServerReload))" Dense="true" Hover="true"
               @ref="table">
         <ToolBarContent>
@@ -16,6 +16,18 @@
                     <MudSelectItem Value="item">@item.Tahun</MudSelectItem>
                 }
             </MudSelect>
+            <MudSelect T="PeriodeKas" Label="Bulan" ValueChanged="OnSelectPeriodeKas">
+                @foreach (var item in periodeKas)
+                {
+                    <MudSelectItem Value="item">@(Helper.GetBulan(item.Bulan))</MudSelectItem>
+                }
+            </MudSelect>
+
+            @if (periodeKasSelected != null && periodeKasSelected.TanggalPenutupan == null && DateOnly.FromDateTime(DateTime.Now) > periodeKasSelected.Berakhir)
+            {
+                 <MudIconButton OnClick="TutupPeriodeKas" Icon="@Icons.Material.Filled.ClosedCaption" Variant="Variant.Outlined" Color="Color.Warning" Size="Size.Medium" />
+            }
+
             <MudSpacer />
             <MudTextField T="string" ValueChanged="@(s=>OnSearch(s))" Placeholder="Search" Adornment="Adornment.Start"
                           AdornmentIcon="@Icons.Material.Filled.Search" IconSize="Size.Medium" Class="mt-0"></MudTextField>
@@ -62,14 +74,11 @@
     </div>
 
 
-
-
 @inject IAkunService akunService
 @inject IKasService kasService
 @inject IDialogService DialogService
 
     @code {
-
 
     [Inject] ISnackbar? Snackbar { get; set; }
     [Inject] IPeriodeService? PeriodeService { get; set; }
@@ -77,6 +86,8 @@
     private IEnumerable<Kas> pagedData = Enumerable.Empty<Kas>();
     private IEnumerable<Kas> sources = Enumerable.Empty<Kas>();
     private IEnumerable<Periode> periodes;
+
+    IEnumerable<PeriodeKas> periodeKas = Enumerable.Empty<PeriodeKas>();
     private IEnumerable<Akun> akuns;
     private MudTable<Kas> table;
 
@@ -91,48 +102,80 @@
         akuns = await akunService.Get();
     }
 
+    PeriodeKas periodeKasSelected;
 
     async Task OnSelectPeriode(Periode p)
     {
         if (p == null)
             return;
-
         isDisable = !p.Aktif;
-        sources = await kasService.GetByYear(p.Tahun);
+        periodeKas = await kasService.GetPeriodeKasByPeriodeId(p.Id);
+        if (!periodeKas.Any())
+        {
+            var options = new DialogOptions { MaxWidth = MaxWidth.Small, FullWidth = true, DisableBackdropClick = true, CloseOnEscapeKey = true };
+            var resultDialog = await DialogService.ShowAsync<CreatePeriodeKas>("Tambah", options);
+            var result = await resultDialog.Result;
+            if (result != null)
+            {
+                periodeKasSelected = result.Data as PeriodeKas;
+                await OnSelectPeriodeKas(periodeKasSelected);
+            }
+        }
+    }
+
+    async Task TutupPeriodeKas()
+    {
+        var data = new DialogParameters();
+        data.Add("model", periodeKasSelected);
+        var options = new DialogOptions { MaxWidth = MaxWidth.Small, FullWidth = true, DisableBackdropClick = true, CloseOnEscapeKey = true };
+        var resultDialog = await DialogService.ShowAsync<CreatePeriodeKas>("Tutup Periode Kas", data, options);
+        var result = await resultDialog.Result;
+        if (result != null)
+        {
+            periodeKasSelected = result.Data as PeriodeKas;
+            await OnSelectPeriodeKas(periodeKasSelected);
+        }
+    }
+
+    async Task OnSelectPeriodeKas(PeriodeKas p)
+    {
+        if (p == null)
+            return;
+        periodeKasSelected = p;
         await table.ReloadServerData();
     }
 
 
     private async Task<TableData<Kas>> ServerReload(TableState state)
     {
-        IEnumerable<Kas>? data = sources;
-        await Task.Delay(300);
-        data = data.Where(element =>
+        if (periodeKasSelected != null)
         {
-            if (string.IsNullOrWhiteSpace(searchString))
-                return true;
-            if (element.Akun.Kode.Contains(searchString, StringComparison.OrdinalIgnoreCase))
-                return true;
+            IEnumerable<Kas>? data = await kasService.Get(periodeKasSelected.Mulai, periodeKasSelected.Berakhir);
+            await Task.Delay(300);
+            data = data.Where(element =>
+            {
+                if (string.IsNullOrWhiteSpace(searchString))
+                    return true;
+                if (element.Akun.Kode.Contains(searchString, StringComparison.OrdinalIgnoreCase))
+                    return true;
 
-            if (element.Akun.Uraian.Contains(searchString, StringComparison.OrdinalIgnoreCase))
-                return true;
+                if (element.Akun.Uraian.Contains(searchString, StringComparison.OrdinalIgnoreCase))
+                    return true;
 
-            return false;
-        }).ToArray();
-        totalItems = data.Count();
-        switch (state.SortLabel)
-        {
-            case "nr_field":
-                data = data.OrderByDirection(state.SortDirection, o => o.Akun.Kode);
-                break;
-            case "description_field":
-                data = data.OrderByDirection(state.SortDirection, o => o.Akun.Uraian);
-                break;
+                return false;
+            }).ToArray();
+            totalItems = data.Count();
+            switch (state.SortLabel)
+            {
+                case "nr_field":
+                    data = data.OrderByDirection(state.SortDirection, o => o.Akun.Kode);
+                    break;
+                case "description_field":
+                    data = data.OrderByDirection(state.SortDirection, o => o.Akun.Uraian);
+                    break;
+            }
+            pagedData = data.Skip(state.Page * state.PageSize).Take(state.PageSize).ToArray();
         }
-
-
-        pagedData = data.Skip(state.Page * state.PageSize).Take(state.PageSize).ToArray();
-
         return new TableData<Kas>() { TotalItems = totalItems, Items = pagedData };
     }
     private void OnSearch(string text)
