@@ -5,11 +5,11 @@
         <div style=" width:100%; display:flex; justify-content:start;align-items:start;flex-direction:column">
             <h4>GEREJA INJILI DI TANAH PAPUA</h4>
             <h4>KLASIS PORT NUMBAY</h4>
-            <h4>JEMAAT MARAMPA YOTEFA</h4>
+            <h4>JEMAAT EFRATA KAYU BATU</h4>
         </div>
     </div>
     <div style="display:flex;justify-content:center; align-items:center;flex-direction:column; margin:20px">
-        <h3>RENCANA ANGGARAN PENDAPATAN </h3>
+        <h3>RENCANA ANGGARAN PENDAPATAN DAN BELANJA </h3>
         <h6 style="font-size:10px">@(Periode == null ? "" : $"1 Januari {Periode.Tahun} s/d 31 Desember {Periode.Tahun}")</h6>
     </div>
 
@@ -20,7 +20,6 @@
 
         <table>
             <tr>
-                <th rowspan="2">No</th>
                 <th rowspan="2">Kode</th>
                 <th rowspan="2" style="width:30%">Uraian</th>
                 <th rowspan="2">Kegiatan</th>
@@ -44,21 +43,18 @@
                 <th>7</th>
                 <th>8</th>
                 <th>9</th>
-                <th>10</th>
             </tr>
 
-            @foreach (var itemx in Datas.GroupBy(x => new { x.KodeKategori, x.Kategori }))
+            @foreach (var itemx in Datas.GroupBy(x => new { x.KodeKategori, x.Kategori }).OrderBy(x=>x.Key.KodeKategori))
             {
                 <tr>
-                    <td style="text-align:center"></td>
-                    <td style="text-align:center">@itemx.Key.KodeKategori</td>
-                    <td colspan="5">@itemx.Key.Kategori</td>
+                    <td style="text-align:center ;font-weight:bold">@itemx.Key.KodeKategori</td>
+                    <td style="font-weight:bold" colspan="5">@itemx.Key.Kategori</td>
                 </tr>
 
                 @foreach (var item in itemx.Cast<RencanaAnggaranModel>().Select((r, i) => new { data = r, index = i }))
                 {
                     <tr>
-                        <td style="text-align:center">@(item.index + 1)</td>
                         <td style="text-align:center">@item.data.Kode</td>
                         <td>@item.data.Uraian</td>
                         <td style="text-align:center">@item.data.Kegiatan</td>
@@ -74,7 +70,7 @@
 
             }
             <tr>
-                <th colspan="5">Total </th>
+                <th colspan="4">Total </th>
                 <th style="text-align:end">@Datas.Sum(x => x.Jumlah).ToString("N2")</th>
                 <th style="text-align:end">@Datas.Sum(x => x.Jemaat).ToString("N2")</th>
                 <th style="text-align:end">@Datas.Sum(x => x.YPK).ToString("N2")</th>

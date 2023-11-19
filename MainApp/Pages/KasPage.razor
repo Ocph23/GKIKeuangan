@@ -1,12 +1,25 @@
 ﻿@page "/kas"
 
 
-<div class="mt-15">
+<div class="mt-15 no-print">
 
     <div class="d-flex justify-content-between align-items-center">
         <h3>Kas</h3>
-        <MudIconButton Disabled=@(periodeKasSelected==null || periodeKasSelected.TanggalPenutupan!=null|| DateOnly.FromDateTime(DateTime.Now)> periodeKasSelected.Berakhir ) OnClick="Add" Icon="@Icons.Material.Filled.Add" Variant="Variant.Outlined" Color="Color.Success" Size="Size.Medium" />
-        </div>
+        <MudMenu Label="Menu Kas" Variant="Variant.Outlined" Color="Color.Info">
+
+            @if (periodeSelected != null && (periodeKasSelected == null || periodeKasSelected.TanggalPenutupan != null))
+            {
+                <MudMenuItem OnClick="BukaPeriodeKas">Buka Periode Kas</MudMenuItem>
+            }
+            @if (periodeKasSelected != null && periodeKasSelected.TanggalPenutupan == null)
+            {
+                <MudMenuItem OnClick="TutupPeriodeKas">Tutup Periode Kas</MudMenuItem>
+            }
+            <MudMenuItem OnClick="LaporanKas">Laporan Kas</MudMenuItem>
+            <MudMenuItem OnClick="LaporanPosisiKas">Laporan Posisi Kas</MudMenuItem>
+        </MudMenu>
+
+    </div>
     <MudTable Class="p-2" ServerData="@(new Func<TableState, Task<TableData<Kas>>>(ServerReload))" Dense="true" Hover="true"
               @ref="table">
         <ToolBarContent>
@@ -16,7 +29,7 @@
                     <MudSelectItem Value="item">@item.Tahun</MudSelectItem>
                 }
             </MudSelect>
-            <MudSelect T="PeriodeKas" Label="Bulan" ValueChanged="OnSelectPeriodeKas">
+            <MudSelect Class="ml-2" T="PeriodeKas" Label="Bulan" ValueChanged="OnSelectPeriodeKas">
                 @foreach (var item in periodeKas)
                 {
                     <MudSelectItem Value="item">@(Helper.GetBulan(item.Bulan))</MudSelectItem>
@@ -25,8 +38,9 @@
 
             @if (periodeKasSelected != null && periodeKasSelected.TanggalPenutupan == null && DateOnly.FromDateTime(DateTime.Now) > periodeKasSelected.Berakhir)
             {
-                 <MudIconButton OnClick="TutupPeriodeKas" Icon="@Icons.Material.Filled.ClosedCaption" Variant="Variant.Outlined" Color="Color.Warning" Size="Size.Medium" />
+                <MudIconButton OnClick="TutupPeriodeKas" Icon="@Icons.Material.Filled.ClosedCaption" Variant="Variant.Outlined" Color="Color.Warning" Size="Size.Medium" />
             }
+
 
             <MudSpacer />
             <MudTextField T="string" ValueChanged="@(s=>OnSearch(s))" Placeholder="Search" Adornment="Adornment.Start"
@@ -42,11 +56,11 @@
             <MudTh>
                 <MudTableSortLabel T="Kas">Uraian</MudTableSortLabel>
             </MudTh>
-            <MudTh>
-                <MudTableSortLabel Style="text-align:right" T="Kategori">Penerimaan</MudTableSortLabel>
+            <MudTh Style="text-align:right">
+                <MudTableSortLabel T="Kategori">Penerimaan</MudTableSortLabel>
             </MudTh>
-            <MudTh>
-                <MudTableSortLabel Style="text-align:right" T="Kas">Pengeluaran</MudTableSortLabel>
+            <MudTh Style="text-align:right">
+                <MudTableSortLabel T="Kas">Pengeluaran</MudTableSortLabel>
             </MudTh>
             <MudTh></MudTh>
         </HeaderContent>
@@ -73,12 +87,27 @@
         </MudTable>
     </div>
 
+    <MudFab Disabled=@(periodeKasSelected==null || periodeKasSelected.TanggalPenutupan!=null|| DateOnly.FromDateTime(DateTime.Now)> periodeKasSelected.Berakhir ) OnClick="Add" style="position: fixed; bottom:20px; right:20px" Color="Color.Primary" IconSize="Size.Small"
+            StartIcon="@Icons.Material.Filled.Add" />
+
+
+@if (kasBulanPrint)
+{
+    <MainApp.Pages.Reports.KasBulanPrint PeriodeKas="periodeKasSelected" Datas="pagedData" />
+}
+else
+{
+    <MainApp.Pages.Reports.KutipanPosisiKasPrint Datas="DataPrint"></MainApp.Pages.Reports.KutipanPosisiKasPrint>
+}
+
+
 
 @inject IAkunService akunService
 @inject IKasService kasService
 @inject IDialogService DialogService
+@inject IJSRuntime Js
 
-    @code {
+@code {
 
     [Inject] ISnackbar? Snackbar { get; set; }
     [Inject] IPeriodeService? PeriodeService { get; set; }
@@ -95,6 +124,12 @@
     private string searchString;
 
     bool isDisable = true;
+    Periode periodeSelected;
+    PeriodeKas periodeKasSelected;
+
+    bool kasBulanPrint = false;
+
+    private List<PosisiKasModel> DataPrint = new List<PosisiKasModel>();
 
     protected override async Task OnInitializedAsync()
     {
@@ -102,15 +137,16 @@
         akuns = await akunService.Get();
     }
 
-    PeriodeKas periodeKasSelected;
 
     async Task OnSelectPeriode(Periode p)
     {
         if (p == null)
             return;
+
+        periodeSelected = p;
         isDisable = !p.Aktif;
         periodeKas = await kasService.GetPeriodeKasByPeriodeId(p.Id);
-        if (!periodeKas.Any())
+        if (!periodeKas.Any() || periodeKas.Last().TanggalPenutupan != null)
         {
             var options = new DialogOptions { MaxWidth = MaxWidth.Small, FullWidth = true, DisableBackdropClick = true, CloseOnEscapeKey = true };
             var resultDialog = await DialogService.ShowAsync<CreatePeriodeKas>("Tambah", options);
@@ -120,6 +156,27 @@
                 periodeKasSelected = result.Data as PeriodeKas;
                 await OnSelectPeriodeKas(periodeKasSelected);
             }
+        }
+    }
+
+    async Task BukaPeriodeKas()
+    {
+
+        var p = await kasService.GetActivePeriodeKas();
+        if (p != null)
+        {
+            Snackbar.Add("Silahkan Tutup Periode Kas Aktif", Severity.Error);
+            return;
+        }
+
+
+        var options = new DialogOptions { MaxWidth = MaxWidth.Small, FullWidth = true, DisableBackdropClick = true, CloseOnEscapeKey = true };
+        var resultDialog = await DialogService.ShowAsync<CreatePeriodeKas>("Tambah", options);
+        var result = await resultDialog.Result;
+        if (result != null)
+        {
+            periodeKasSelected = result.Data as PeriodeKas;
+            await OnSelectPeriodeKas(periodeKasSelected);
         }
     }
 
@@ -144,6 +201,127 @@
         periodeKasSelected = p;
         await table.ReloadServerData();
     }
+
+    async Task LaporanKas()
+    {
+
+        kasBulanPrint = true;
+        if (periodeSelected != null)
+        {
+            try
+            {
+                var periodeKas = await kasService.GetPeriodeKasForPosisiKas();
+                var bulainIni = periodeKas.ToArray()[0];
+
+                var kas = await kasService.Get(bulainIni.Mulai, bulainIni.Berakhir);
+
+
+
+                DataPrint = new List<PosisiKasModel>();
+                DataPrint.Add(new PosisiKasModel()
+                    {
+                        Uraian = "Jumlah Bulan Ini ",
+                        Penerimaan = kas.Where(x => x.Akun.Tipe == AkunType.Penerimaan).Sum(x => x.Jumlah),
+                        Pengeluaran = kas.Where(x => x.Akun.Tipe == AkunType.Pengeluaran).Sum(x => x.Jumlah),
+                    });
+                if (periodeKas.Count() == 2)
+                {
+                    var bulainlalu = periodeKas.ToArray()[1];
+                    DataPrint.Add(new PosisiKasModel()
+                        {
+                            Uraian = "Jumlah Bulan Lalu ",
+                            Penerimaan = bulainlalu.Penerimaan,
+                            Pengeluaran = bulainlalu.Pengeluaran
+                        });
+                }
+
+                var semua = new PosisiKasModel()
+                    {
+                        Uraian = "Jumlah Semua",
+                        Penerimaan = DataPrint.Sum(x => x.Penerimaan),
+                        Pengeluaran = DataPrint.Sum(x => x.Pengeluaran),
+                    };
+                DataPrint.Add(semua);
+
+                DataPrint.Add(new PosisiKasModel()
+                    {
+                        Uraian = "Saldo",
+                        Saldo = semua.Penerimaan - semua.Pengeluaran
+                    });
+
+                await InvokeAsync(() => StateHasChanged());
+
+                await Task.Delay(500);
+                await Js.InvokeVoidAsync("print");
+            }
+            catch (Exception ex)
+            {
+                Snackbar.Add(ex.Message, Severity.Error);
+            }
+        }
+    }
+
+
+
+
+    async Task LaporanPosisiKas()
+    {
+        kasBulanPrint = true;
+        if (periodeSelected != null)
+        {
+            try
+            {
+                var periodeKas = await kasService.GetPeriodeKasForPosisiKas();
+                var bulainIni = periodeKas.ToArray()[0];
+
+                var kas = await kasService.Get(bulainIni.Mulai, bulainIni.Berakhir);
+
+
+
+                DataPrint = new List<PosisiKasModel>();
+                DataPrint.Add(new PosisiKasModel()
+                    {
+                        Uraian = "Jumlah Bulan Ini ",
+                        Penerimaan = kas.Where(x => x.Akun.Tipe == AkunType.Penerimaan).Sum(x => x.Jumlah),
+                        Pengeluaran = kas.Where(x => x.Akun.Tipe == AkunType.Pengeluaran).Sum(x => x.Jumlah),
+                    });
+                if (periodeKas.Count() == 2)
+                {
+                    var bulainlalu = periodeKas.ToArray()[1];
+                    DataPrint.Add(new PosisiKasModel()
+                        {
+                            Uraian = "Jumlah Bulan Lalu ",
+                            Penerimaan = bulainlalu.Penerimaan,
+                            Pengeluaran = bulainlalu.Pengeluaran
+                        });
+                }
+
+                var semua = new PosisiKasModel()
+                    {
+                        Uraian = "Jumlah Semua",
+                        Penerimaan = DataPrint.Sum(x => x.Penerimaan),
+                        Pengeluaran = DataPrint.Sum(x => x.Pengeluaran),
+                    };
+                DataPrint.Add(semua);
+
+                DataPrint.Add(new PosisiKasModel()
+                    {
+                        Uraian = "Saldo",
+                        Saldo = semua.Penerimaan - semua.Pengeluaran
+                    });
+
+                await InvokeAsync(() => StateHasChanged());
+
+                await Task.Delay(500);
+                await Js.InvokeVoidAsync("print");
+            }
+            catch (Exception ex)
+            {
+                Snackbar.Add(ex.Message, Severity.Error);
+            }
+        }
+    }
+
 
 
     private async Task<TableData<Kas>> ServerReload(TableState state)

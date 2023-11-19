@@ -30,8 +30,11 @@ namespace MainApp.Migrations
 
                     NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
 
-                    b.Property<bool>("Jemaat")
+                    b.Property<bool>("AlokasiProsentese")
                         .HasColumnType("boolean");
+
+                    b.Property<double>("Jemaat")
+                        .HasColumnType("double precision");
 
                     b.Property<int>("KategoriId")
                         .HasColumnType("integer");
@@ -39,14 +42,17 @@ namespace MainApp.Migrations
                     b.Property<string>("Keterangan")
                         .HasColumnType("text");
 
-                    b.Property<bool>("Klasis")
-                        .HasColumnType("boolean");
+                    b.Property<double>("Klasis")
+                        .HasColumnType("double precision");
 
                     b.Property<string>("Kode")
                         .HasColumnType("text");
 
-                    b.Property<bool>("Sinode")
+                    b.Property<bool>("SetoranWajib")
                         .HasColumnType("boolean");
+
+                    b.Property<double>("Sinode")
+                        .HasColumnType("double precision");
 
                     b.Property<int>("Tipe")
                         .HasColumnType("integer");
@@ -54,8 +60,8 @@ namespace MainApp.Migrations
                     b.Property<string>("Uraian")
                         .HasColumnType("text");
 
-                    b.Property<bool>("YPK")
-                        .HasColumnType("boolean");
+                    b.Property<double>("YPK")
+                        .HasColumnType("double precision");
 
                     b.HasKey("Id");
 
@@ -162,8 +168,17 @@ namespace MainApp.Migrations
                     b.Property<int>("Bulan")
                         .HasColumnType("integer");
 
+                    b.Property<double>("Jemaat")
+                        .HasColumnType("double precision");
+
+                    b.Property<double>("Klasis")
+                        .HasColumnType("double precision");
+
                     b.Property<DateOnly>("Mulai")
                         .HasColumnType("date");
+
+                    b.Property<double>("PembayaranUtang")
+                        .HasColumnType("double precision");
 
                     b.Property<string>("PemegangKas")
                         .IsRequired()
@@ -181,8 +196,17 @@ namespace MainApp.Migrations
                     b.Property<double>("SaldoLalu")
                         .HasColumnType("double precision");
 
+                    b.Property<double>("Sinode")
+                        .HasColumnType("double precision");
+
                     b.Property<DateOnly?>("TanggalPenutupan")
                         .HasColumnType("date");
+
+                    b.Property<double>("UtangLalu")
+                        .HasColumnType("double precision");
+
+                    b.Property<double>("YPK")
+                        .HasColumnType("double precision");
 
                     b.HasKey("Id");
 
@@ -205,20 +229,8 @@ namespace MainApp.Migrations
                     b.Property<string>("Catatan")
                         .HasColumnType("text");
 
-                    b.Property<double>("Jemaat")
-                        .HasColumnType("double precision");
-
-                    b.Property<double>("Klasis")
-                        .HasColumnType("double precision");
-
-                    b.Property<double>("Sinode")
-                        .HasColumnType("double precision");
-
                     b.Property<int>("Tahun")
                         .HasColumnType("integer");
-
-                    b.Property<double>("YPK")
-                        .HasColumnType("double precision");
 
                     b.HasKey("Id");
 

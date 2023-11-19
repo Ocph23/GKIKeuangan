@@ -4,10 +4,9 @@
 <MudSnackbarProvider />
 
 <MudLayout>
-    <MudAppBar Elevation="1">
+    <MudAppBar Color="Color.Warning " Elevation="1">
         <MudIconButton Icon="@Icons.Material.Filled.Menu" Color="Color.Inherit" Edge="Edge.Start" OnClick="@((e) => DrawerToggle())" />
         <MudSpacer />
-        <MudIconButton Icon="@Icons.Material.Filled.MoreVert" Color="Color.Inherit" Edge="Edge.End" />
         <LoginDisplay />
     </MudAppBar>
     <MudDrawer @bind-Open="_drawerOpen" Elevation="2">
@@ -17,9 +16,20 @@
         @Body
     </MudMainContent>
 </MudLayout>
-@code {
-    bool _drawerOpen = true;
 
+@inject AuthenticationStateProvider authStateProvider
+@inject NavigationManager Navigation
+@code {
+
+    bool _drawerOpen = true;
+    protected override async Task OnInitializedAsync()
+    {
+        var authState = await authStateProvider.GetAuthenticationStateAsync();
+        if (authState.User == null || !authState.User.Identity.IsAuthenticated)
+        {
+            Navigation.NavigateTo("/Identity/Account/Login", true);
+        }
+    }
     void DrawerToggle()
     {
         _drawerOpen = !_drawerOpen;

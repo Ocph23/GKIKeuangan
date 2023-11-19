@@ -1,0 +1,63 @@
+﻿@using MainApp.Models
+<div class="just-print">
+    <div style="width:100%; padding:10px; display:flex; border-bottom: 1px solid gray">
+        <img style="margin-right:10px;width:50px; height:50px" src="logogki.png" />
+        <div style=" width:100%; display:flex; justify-content:start;align-items:start;flex-direction:column">
+            <h4>GEREJA INJILI DI TANAH PAPUA</h4>
+            <h4>KLASIS PORT NUMBAY</h4>
+            <h4>JEMAAT EFRATA KAYU BATU</h4>
+        </div>
+    </div>
+    <div style="display:flex;justify-content:center; align-items:center;flex-direction:column; margin:20px">
+        <h3>KUTIPAN BUKU KAS UMUM (BKU) </h3>
+        <h6 style="font-size:10px">@($"POSISI KAS PERTANGGAL {DateTime.Now.ToShortDateString()}")</h6>
+    </div>
+
+    @if (Datas.Count() > 0)
+    {
+        <table>
+            <tr>
+                <th style="width:60px">No</th>
+                <th style="width:40%">Uraian</th>
+                <th>Penerimaan</th>
+                <th>Pengeluaran</th>
+                <th>Saldo</th>
+            </tr>
+            <tr>
+                <th>1</th>
+                <th>2</th>
+                <th>3</th>
+                <th>4</th>
+                <th>5</th>
+            </tr>
+
+            @foreach (var item in Datas.Cast<PosisiKasModel>().Select((r, i) => new { data = r, index = i }))
+            {
+                <tr>
+                    <td style="text-align:center">@(item.index + 1)</td>
+                    <td>@item.data.Uraian</td>
+                    <td style="text-align:end">@item.data.Penerimaan.ToString("N2")</td>
+                    <td style="text-align:end">@item.data.Pengeluaran.ToString("N2")</td>
+                    <td style="text-align:end">@(item.data.Saldo == 0 ? "" : item.data.Saldo.ToString("N2"))</td>
+                </tr>
+            }
+        </table>
+    }
+</div>
+
+@code {
+
+    [Parameter]
+    public IEnumerable<PosisiKasModel> Datas { get; set; } = Enumerable.Empty<PosisiKasModel>();
+
+    protected override Task OnInitializedAsync()
+    {
+        return base.OnInitializedAsync();
+    }
+
+
+
+
+   
+
+}

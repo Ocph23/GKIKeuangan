@@ -20,30 +20,33 @@ namespace MainApp.Models
         public double Nilai { get; set; }
 
         public double Jumlah => Kegiatan * Nilai;
+
         public Periode Periode { get; set; }
 
-        public bool IsJemaat { get; set; }
-        public bool IsYPK { get; set; }
-        public bool IsKlasis { get; set; }
-        public bool IsSinode { get; set; }
+        public bool AlokasiPresentase { get; set; }
+
+        public double ProsentaseJemaat { get; set; }
+        public double ProsentaseYPK { get; set; }
+        public double ProsentaseKlasis { get; set; }
+        public double ProsentaseSinode { get; set; }
 
 
-        public double Jemaat => !IsJemaat?0:GetAlokasi(Alokasi.Jemaat);
-        public double Klasis => !IsKlasis ? 0 : GetAlokasi(Alokasi.Klasis);
-        public double YPK => !IsYPK ? 0 : GetAlokasi(Alokasi.YPK);
-        public double Sinode => !IsSinode ? 0 : GetAlokasi(Alokasi.Sinode);
+        public double Jemaat => GetAlokasi(Alokasi.Jemaat);
+        public double Klasis => GetAlokasi(Alokasi.Klasis);
+        public double YPK => GetAlokasi(Alokasi.YPK);
+        public double Sinode => GetAlokasi(Alokasi.Sinode);
 
         private double GetAlokasi(Alokasi alokasi)
         {
-            if (Periode == null)
+            if (Periode == null || !AlokasiPresentase)
                 return 0;
 
             double al = alokasi switch
             {
-                Alokasi.Jemaat => Periode.Jemaat,
-                Alokasi.YPK => Periode.YPK,
-                Alokasi.Klasis => Periode.Klasis,
-                Alokasi.Sinode => Periode.Sinode,
+                Alokasi.Jemaat => ProsentaseJemaat,
+                Alokasi.YPK => ProsentaseYPK,
+                Alokasi.Klasis => ProsentaseKlasis,
+                Alokasi.Sinode => ProsentaseSinode,
                 _ => 0
             };
             return Jumlah * al / 100;

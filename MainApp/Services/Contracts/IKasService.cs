@@ -13,6 +13,7 @@ public interface IKasService
     Task<bool> Delete(int id);
 
     Task<IEnumerable<PeriodeKas>> GetPeriodeKasByPeriodeId(int periodeId);
+    Task<IEnumerable<PeriodeKas>> GetPeriodeKasForPosisiKas();
     Task<PeriodeKas> GetPeriodeKasById(int id);
     Task<PeriodeKas> GetActivePeriodeKas();
     Task<bool> TutupKas(PeriodeKas model, DateOnly tanggalPenutupan);

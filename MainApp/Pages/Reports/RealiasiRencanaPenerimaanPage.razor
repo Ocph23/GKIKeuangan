@@ -1,0 +1,153 @@
+﻿@page "/laporan/realisasi"
+@using MainApp.Models
+@using MainApp.Pages.Reports
+
+<div class="mt-15 no-print">
+    <div class="d-flex justify-content-between align-items-center">
+        <h3>Laporan Realiasi Penerimaan dan Belanja</h3>
+        <div>
+            <MudIconButton Disabled="@(Datas.Count()<=0)" OnClick="Print" Icon="@Icons.Material.Filled.Print" Variant="Variant.Outlined" Color="Color.Warning" Size="Size.Medium" />
+        </div>
+    </div>
+
+    <MudTable Items="@Datas" Hover="true" Breakpoint="Breakpoint.Sm" LoadingProgressColor="Color.Info">
+        <ToolBarContent>
+            <MudSelect Label="Periode" Style="width:100px" T="Periode" ValueChanged="OnSelectPeriode">
+                @foreach (var item in periodes)
+                {
+                    <MudSelectItem Value="item">@item.Tahun</MudSelectItem>
+                }
+            </MudSelect>
+            <MudSelect Class="ml-1" Label="Jenis/Tipe" Style="width:100px" T="AkunType" ValueChanged="OnSelectTipe">
+                @foreach (var item in Enum.GetValues(typeof(AkunType)).Cast<AkunType>())
+                {
+                    <MudSelectItem Value="item">@item</MudSelectItem>
+                }
+            </MudSelect>
+
+            <MudSpacer />
+        </ToolBarContent>
+        <HeaderContent>
+            <MudTh>Ayat</MudTh>
+            <MudTh>Rencana</MudTh>
+            <MudTh>Jan</MudTh>
+            <MudTh>Feb</MudTh>
+            <MudTh>Mar</MudTh>
+            <MudTh>Apr</MudTh>
+            <MudTh>Mei</MudTh>
+            <MudTh>Jun</MudTh>
+            <MudTh>Jul</MudTh>
+            <MudTh>Ags</MudTh>
+            <MudTh>Sept</MudTh>
+            <MudTh>Okt</MudTh>
+            <MudTh>Nov</MudTh>
+            <MudTh>Des</MudTh>
+            <MudTh>Jumlah</MudTh>
+            <MudTh>Lebih</MudTh>
+            <MudTh>Kurang</MudTh>
+        </HeaderContent>
+        <RowTemplate>
+            <MudTd DataLabel="Ayat">@context.AyatPenerimaan</MudTd>
+                <MudTd DataLabel="Rencana">@context.Rencana</MudTd>
+                @foreach (var item in context.Bulan)
+            {
+                <MudTd>@item</MudTd>
+            }
+            <MudTd DataLabel="Jumlah">@context.Jumlah</MudTd>
+                <MudTd DataLabel="Jumlah">@context.Lebih</MudTd>
+                <MudTd DataLabel="Jumlah">@context.Kurang</MudTd>
+            </RowTemplate>
+        </MudTable>
+    </div>
+
+    <LaporanRealisasiAnggaran Tipe="Tipe" Periode="model" Datas="Datas" />
+
+@inject IAkunService akunService
+@inject IKasService kasService
+@inject IDialogService DialogService
+@inject IJSRuntime Js
+
+    @code {
+
+
+    [Inject] ISnackbar? Snackbar { get; set; }
+    [Inject] IPeriodeService? PeriodeService { get; set; }
+
+    private IEnumerable<RencanaAnggaranModel> dataPrint = Enumerable.Empty<RencanaAnggaranModel>();
+    private ICollection<RealisasiModel> Datas = new List<RealisasiModel>();
+    private IEnumerable<Periode> periodes;
+    Periode model;
+    AkunType Tipe;
+    bool IsEditable()
+    {
+        return model != null && model.Aktif;
+    }
+
+
+    protected override async Task OnInitializedAsync()
+    {
+        periodes = await PeriodeService.Get();
+    }
+
+
+    async Task OnSelectPeriode(Periode p)
+    {
+        model = await PeriodeService.GetById(p.Id);
+        if (model == null)
+            return;
+        await LoadData();
+    }
+
+    async Task OnSelectTipe(AkunType tipe)
+    {
+        Tipe = tipe;
+        await LoadData();
+    }
+
+
+    async Task LoadData()
+    {
+        Datas.Clear();
+
+        if (model != null)
+        {
+            var kas = await kasService.GetByYear(model.Tahun);
+
+            foreach (var item in model.RencanaAnggaranBalanja.Where(x=>x.Akun.Tipe==Tipe)
+                .GroupBy(x => new { Id = x.Akun.Kategori.Id, Name = x.Akun.Kategori.Nama, Kode = x.Akun.Kategori.Kode }))
+            {
+                var datas = kas.Where(x => x.Akun.Kategori.Id == item.Key.Id);
+                var realisasi = new RealisasiModel() { AyatPenerimaan = $"{item.Key.Kode} {item.Key.Name}" };
+                realisasi.Rencana = item.Sum(x => x.Jumlah);
+                foreach (var bln in Enumerable.Range(1, 12))
+                {
+                    realisasi.Bulan.Add(datas.Where(x => x.Tanggal.Value.Month == bln).Sum(x => x.Jumlah));
+                }
+                realisasi.Jumlah = realisasi.Bulan.Sum(x => x);
+                Datas.Add(realisasi);
+            }
+        }
+    }
+
+    async Task Save()
+    {
+        try
+        {
+            var updated = await PeriodeService.PutAnggaran(model.Id, model);
+            if (updated)
+            {
+                Snackbar.Add("Data Tersimpan ", Severity.Success);
+            }
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add(ex.Message, Severity.Error);
+        }
+    }
+
+    async Task Print()
+    {
+        await Js.InvokeVoidAsync("print");
+    }
+
+}

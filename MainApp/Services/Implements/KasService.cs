@@ -185,7 +185,7 @@ public class KasService : IKasService
         }
     }
 
-    public Task<bool> TutupKas(PeriodeKas model, DateOnly tanggalPenutupan)
+    public async Task<bool> TutupKas(PeriodeKas model, DateOnly tanggalPenutupan)
     {
         try
         {
@@ -196,10 +196,18 @@ public class KasService : IKasService
             var periode = dbcontext.PeriodeKas.SingleOrDefault(x => x.PeriodeId == p.Id && x.TanggalPenutupan == null);
             if (periode == null)
                 throw new SystemException("Periode Kas Tidak Ditemukan !");
+            var kas = await Get(periode.Mulai, periode.Berakhir);
+            periode.Penerimaan = kas.Where(x => x.Akun.Tipe == AkunType.Penerimaan).Sum(x => x.Jumlah);
+            periode.Pengeluaran = kas.Where(x => x.Akun.Tipe == AkunType.Pengeluaran).Sum(x => x.Jumlah);
+            periode.Sinode = kas.Where(x => x.Akun.Tipe == AkunType.Penerimaan && x.Akun.Sinode>0).Sum(x=>x.Jumlah * x.Akun.Sinode/100);
+            periode.Klasis = kas.Where(x => x.Akun.Tipe == AkunType.Penerimaan && x.Akun.Klasis>0).Sum(x=>x.Jumlah * x.Akun.Klasis/100);
+            periode.YPK = kas.Where(x => x.Akun.Tipe == AkunType.Penerimaan && x.Akun.YPK>0).Sum(x=>x.Jumlah * x.Akun.YPK/100);
+            periode.Jemaat= kas.Where(x => x.Akun.Tipe == AkunType.Penerimaan && x.Akun.Jemaat>0).Sum(x=>x.Jumlah * x.Akun.Jemaat/100);
+            periode.PembayaranUtang = kas.Where(x => x.Akun.Tipe == AkunType.Pengeluaran && x.Akun.SetoranWajib).Sum(x => x.Jumlah);
 
             periode.TanggalPenutupan = tanggalPenutupan;
-
-            return Task.FromResult(true);
+            dbcontext.SaveChanges();
+            return true;
         }
         catch (Exception)
         {
@@ -223,6 +231,7 @@ public class KasService : IKasService
             if (last.Any())
             {
                 periodeKas.SaldoLalu = last.First().Saldo;
+                periodeKas.UtangLalu = last.First().Utang;
             }
 
             periodeKas.Periode = p;
@@ -236,5 +245,26 @@ public class KasService : IKasService
         }
     }
 
+    public Task<IEnumerable<PeriodeKas>> GetPeriodeKasForPosisiKas()
+    {
+        try
+        {
+            var p = dbcontext.DataPeriode.SingleOrDefault(x => x.Aktif);
+            if (p == null)
+                throw new SystemException("Tidak Ada Periode Tahun Buku Aktif ");
 
+            var periodes = dbcontext.PeriodeKas.OrderByDescending(x => x.Id).Take(2);
+            if (!periodes.Any())
+                throw new SystemException($"Periode Kas Tahun Buku {p.Tahun} Belum Ada !");
+
+
+            return Task.FromResult(periodes.AsEnumerable());
+
+        }
+        catch (Exception)
+        {
+
+            throw;
+        }
+    }
 }

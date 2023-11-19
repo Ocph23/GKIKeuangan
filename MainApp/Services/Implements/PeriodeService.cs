@@ -51,8 +51,10 @@ public class PeriodeService : IPeriodeService
     {
         try
         {
-            var data = dbcontext.DataPeriode.Include(x => x.RencanaAnggaranBalanja)
-                .ThenInclude(x => x.Akun).SingleOrDefault(x => x.Id == id);
+            var data = dbcontext.DataPeriode
+                .Include(x => x.RencanaAnggaranBalanja)
+                .ThenInclude(x => x.Akun).ThenInclude(x=>x.Kategori)
+                .SingleOrDefault(x => x.Id == id);
             return Task.FromResult(result: data)!;
         }
         catch (System.Exception)
@@ -101,13 +103,6 @@ public class PeriodeService : IPeriodeService
 
             data.Tahun = model.Tahun;
             data.Aktif = model.Aktif;
-            data.Jemaat = model.Jemaat;
-            data.YPK = model.YPK;
-            data.Klasis = model.Klasis;
-            data.Sinode = model.Sinode;
-
-
-
             dbcontext.SaveChanges();
             return Task.FromResult(true);
         }

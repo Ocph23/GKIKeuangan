@@ -9,25 +9,7 @@
                                   Label="Tahun" />
 
 
-                    <MudNumericField @bind-Value="model.Jemaat"
-                                     For="@(() => model.Jemaat)"
-                                     Immediate="true"
-                                     Label="Alokasi Jemaat" />
-
-                    <MudNumericField @bind-Value="model.YPK"
-                                     For="@(() => model.YPK)"
-                                     Immediate="true"
-                                     Label="Alokasi YPK" />
-
-                    <MudNumericField @bind-Value="model.Klasis"
-                                     For="@(() => model.Klasis)"
-                                     Immediate="true"
-                                     Label="Alokasi Klasis" />
-
-                    <MudNumericField @bind-Value="model.Sinode"
-                                     For="@(() => model.Sinode)"
-                                     Immediate="true"
-                                     Label="Alokasi Sinode" />
+                  
 
                     <MudTextField @bind-Value="model.Catatan"
                                   For="@(() => model.Catatan)"
@@ -83,21 +65,8 @@
     private async Task Submit()
     {
         await form.Validate();
-
-        if ((model.Jemaat + model.YPK + model.Klasis + model.Sinode) != 100)
-        {
-            Snackbar.Add("Total Alokasi Harus 100%!", MudBlazor.Severity.Error);
-            return;
-        }
-
-
         if (form.IsValid)
         {
-
-
-
-
-
             try
             {
                 if (model.Id <= 0)

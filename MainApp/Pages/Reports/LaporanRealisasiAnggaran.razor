@@ -1,0 +1,84 @@
+﻿@using MainApp.Models
+<div class="just-print">
+    <div style="width:100%; padding:10px; display:flex; border-bottom: 1px solid gray">
+        <img style="margin-right:10px;width:50px; height:50px" src="logogki.png" />
+        <div style=" width:100%; display:flex; justify-content:start;align-items:start;flex-direction:column">
+            <h4>GEREJA INJILI DI TANAH PAPUA</h4>
+            <h4>KLASIS PORT NUMBAY</h4>
+            <h4>JEMAAT EFRATA KAYU BATU</h4>
+        </div>
+    </div>
+    <div style="display:flex;justify-content:center; align-items:center;flex-direction:column; margin:20px">
+        <h3>LAPORAN TAHUNAN REALISASI @(Tipe == AkunType.Penerimaan ? "PENERIMAAN":"BELANJA") </h3>
+        <h6 style="font-size:10px">@(Periode == null ? "" : $"1 Januari {Periode.Tahun} s/d 31 Desember {Periode.Tahun}")</h6>
+    </div>
+
+    @if (Datas.Count() > 0)
+    {
+        <table>
+            <tr>
+                <th rowspan="2">No</th>
+                <th rowspan="2" style="width:20%">Uraian</th>
+                <th rowspan="2">Rencana</th>
+                <th colspan="12">Realisasi Penerimaan</th>
+                <th rowspan="2">Jumlah</th>
+                <th colspan="2">Selisih</th>
+            </tr>
+            <tr>
+                <th>1</th>
+                <th>2</th>
+                <th>3</th>
+                <th>4</th>
+                <th>5</th>
+                <th>6</th>
+                <th>7</th>
+                <th>8</th>
+                <th>9</th>
+                <th>10</th>
+                <th>11</th>
+                <th>12</th>
+                <th>Lebih</th>
+                <th>Kurang</th>
+            </tr>
+
+            @foreach (var item in Datas.Cast<RealisasiModel>().Select((r, i) => new { data = r, index = i }))
+            {
+                <tr>
+                    <td style="text-align:center">@(item.index+1)</td>
+                    <td>@item.data.AyatPenerimaan</td>
+                    <td style="text-align:end">@item.data.Rencana.ToString("N0")</td>
+                    @foreach (var x in item.data.Bulan)
+                    {
+                        <td style="text-align:end">@x.ToString("N0")</td>
+                    }
+                    <td style="text-align:end">@item.data.Jumlah.ToString("N0")</td>
+                    <td style="text-align:end">@item.data.Lebih.ToString("N0")</td>
+                    <td style="text-align:end">@item.data.Kurang.ToString("N0")</td>
+                </tr>
+            }
+        </table>
+    }
+</div>
+
+@code {
+
+    [Parameter]
+    public Periode Periode { get; set; }
+
+    [Parameter]
+    public AkunType Tipe{ get; set; }
+
+    [Parameter]
+    public IEnumerable<RealisasiModel> Datas { get; set; } = Enumerable.Empty<RealisasiModel>();
+
+    string periodeString = string.Empty;
+    protected override Task OnInitializedAsync()
+    {
+        if (Periode != null)
+        {
+            periodeString = $"1 Januari {Periode.Tahun} s/d 31 Desember {Periode.Tahun}";
+        }
+        return base.OnInitializedAsync();
+    }
+
+}

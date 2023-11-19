@@ -11,20 +11,28 @@
                         }
                     </MudSelect>
 
-                    <MudDatePicker Label="Mulai" Editable="true" @bind-Date="Mulai" ImmediateText="true"
-                                   For="@(() => Mulai)"
-                                   Placeholder="day/month/year" DateFormat="dd/MM/yyyy" />
 
-                    <MudDatePicker  Label="Berakhir" Editable="true" @bind-Date="Akhir" ImmediateText="true"
-                                   For="@(() => Akhir)"
-                                   Placeholder="day/month/year" DateFormat="dd/MM/yyyy" />
+                    @if (model.Id <= 0)
+                    {
+                        <MudDatePicker Label="Mulai" Editable="true" @bind-Date="Mulai" ImmediateText="true"
+                                       For="@(() => Mulai)"
+                                       Placeholder="day/month/year" DateFormat="dd/MM/yyyy" />
+
+                        <MudDatePicker Label="Berakhir" Editable="true" @bind-Date="Akhir" ImmediateText="true"
+                                       For="@(() => Akhir)"
+                                       Placeholder="day/month/year" DateFormat="dd/MM/yyyy" />
+                    }
+                    else
+                    {
+                        <MudDatePicker Label="Tanggal Penutupan Kas" Editable="true" @bind-Date="TanggalPenutupan" ImmediateText="true"
+                                       For="@(() => TanggalPenutupan)"
+                                       Placeholder="day/month/year" DateFormat="dd/MM/yyyy" />
+                    }
 
                     <MudTextField @bind-Value="model.PemegangKas"
                                   For="@(() => model.PemegangKas)"
                                   Immediate="true"
                                   Label="Pemegang Kas" />
-
-
                 </MudCardContent>
             </MudForm>
             <MudCardActions>
@@ -54,9 +62,15 @@
 
     DateTime? Mulai;
     DateTime? Akhir;
+    DateTime? TanggalPenutupan;
 
     protected override async Task OnInitializedAsync()
     {
+        if(model!=null && model.Id > 0)
+        {
+            TanggalPenutupan = DateTime.Now;
+        }
+
     }
 
     void Cancel() => MudDialog.Cancel();
@@ -80,7 +94,7 @@
                 }
                 else
                 {
-                    var result = await kasService.TutupKas(model, DateOnly.FromDateTime(DateTime.Now));
+                    var result = await kasService.TutupKas(model, DateOnly.FromDateTime(TanggalPenutupan.Value));
                     Snackbar.Add("Tersimpan !");
                     MudDialog.Close(DialogResult.Ok(result));
                 }

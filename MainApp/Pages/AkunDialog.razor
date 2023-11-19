@@ -25,28 +25,43 @@
                         }
                     </MudSelect>
 
-                    <MudCheckBox @bind-Checked="model.Jemaat"
-                                  For="@(() => model.Jemaat)"
-                                  Immediate="true"
-                                  Label="Alokasi Jemaat" />
+                    @if (model.Tipe == AkunType.Penerimaan)
+                    {
+                        <MudCheckBox @bind-Checked="model.AlokasiProsentese"
+                                     For="@(() => model.AlokasiProsentese)"
+                                     Immediate="true"
+                                     Label="Alokasi Prosentase" />
+                    }
+                    else
+                    {
+                        <MudCheckBox @bind-Checked="model.SetoranWajib"
+                                     For="@(() => model.SetoranWajib)"
+                                     Immediate="true"
+                                     Label="Setoran Wajib" />
+                    }
 
+                    @if (model.AlokasiProsentese)
+                    {
+                        <MudNumericField @bind-Value="model.Jemaat"
+                                         For="@(() => model.Jemaat)"
+                                         Immediate="true"
+                                         Label="Alokasi Jemaat (%)" />
 
-                    <MudCheckBox @bind-Checked="model.YPK"
-                                 For="@(() => model.YPK)"
-                                 Immediate="true"
-                                 Label="Alokasi YPK" />
+                        <MudNumericField @bind-Value="model.YPK"
+                                         For="@(() => model.YPK)"
+                                         Immediate="true"
+                                         Label="Alokasi YPK (%)" />
 
-                    <MudCheckBox @bind-Checked="model.Klasis"
-                                 For="@(() => model.Klasis)"
-                                 Immediate="true"
-                                 Label="Alokasi Klasis" />
+                        <MudNumericField @bind-Value="model.Klasis"
+                                         For="@(() => model.Klasis)"
+                                         Immediate="true"
+                                         Label="Alokasi Klasis (%)" />
 
-
-                    <MudCheckBox @bind-Checked="model.Sinode"
-                                 For="@(() => model.Sinode)"
-                                 Immediate="true"
-                                 Label="Alokasi Sinode" />
-
+                        <MudNumericField @bind-Value="model.Sinode"
+                                         For="@(() => model.Sinode)"
+                                         Immediate="true"
+                                         Label="Alokasi Sinode (%)" />
+                    }
 
                     <MudTextField @bind-Value="model.Keterangan"
                                   For="@(() => model.Keterangan)"
@@ -74,7 +89,7 @@
     [CascadingParameter] MudDialogInstance MudDialog { get; set; }
 
     [Parameter]
-    public Akun model { get; set; } = new Akun();
+    public Akun model { get; set; } = new Akun() { Jemaat = 100 };
 
     MudForm form;
     AkunFluentValidator orderValidator = new AkunFluentValidator();
@@ -91,23 +106,46 @@
 
     private async Task Submit()
     {
+        if (model.Tipe == AkunType.Pengeluaran)
+        {
+            model.AlokasiProsentese = false;
+            model.Jemaat = 0;
+            model.YPK = 0;
+            model.Klasis = 0;
+            model.Sinode = 0;
+        }
+
+        if (model.Tipe == AkunType.Penerimaan)
+        {
+            if (!model.AlokasiProsentese)
+            {
+                Snackbar.Add("Anda Belum Menentukan Alokasi Prosentase", MudBlazor.Severity.Error);
+                return;
+            }
+
+
+            if (model.AlokasiProsentese == true && (model.Jemaat + model.YPK + model.Klasis + model.Sinode) != 100)
+            {
+                Snackbar.Add("Alokasi Harus 100%", MudBlazor.Severity.Error);
+                return;
+            }
+        }
         await form.Validate();
 
         if (form.IsValid)
         {
-
             try
             {
                 if (model.Id <= 0)
                 {
                     var result = await akunService.Post(model);
-                    Snackbar.Add("Tersimpan !");
+                    Snackbar.Add("Tersimpan !", MudBlazor.Severity.Success);
                     MudDialog.Close(DialogResult.Ok(result));
                 }
                 else
                 {
                     var result = await akunService.Put(model.Id, model);
-                    Snackbar.Add("Tersimpan !");
+                    Snackbar.Add("Tersimpan !", MudBlazor.Severity.Success);
                     MudDialog.Close(DialogResult.Ok(result));
                 }
             }

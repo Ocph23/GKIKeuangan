@@ -1,9 +1,10 @@
 ﻿@page "/rencanaanggaran"
 @using MainApp.Models
+@using MainApp.Pages.Reports
 
 <div class="mt-15 no-print">
     <div class="d-flex justify-content-between align-items-center">
-        <h3>Rencana Anggaran Belanja</h3>
+        <h3>Rencana Anggaran Dan Belanja</h3>
         <div>
             <MudIconButton Disabled="@(!IsEditable())" OnClick="Save" Icon="@Icons.Material.Filled.Save" Variant="Variant.Outlined" Color="Color.Success" Size="Size.Medium" />
             <MudIconButton Disabled="@(dataPrint.Count()<=0)" OnClick="Print" Icon="@Icons.Material.Filled.Print" Variant="Variant.Outlined" Color="Color.Warning" Size="Size.Medium" />
@@ -126,10 +127,11 @@
                             Nilai = item.Nilai,
                             Kode = item.Akun.Kode,
                             Uraian = item.Akun.Uraian,
-                            IsJemaat = item.Akun.Jemaat,
-                            IsYPK = item.Akun.YPK,
-                            IsKlasis = item.Akun.Klasis,
-                            IsSinode = item.Akun.Sinode,
+                            AlokasiPresentase = item.Akun.AlokasiProsentese,
+                            ProsentaseJemaat = item.Akun.Jemaat,
+                            ProsentaseYPK = item.Akun.YPK,
+                            ProsentaseKlasis = item.Akun.Klasis,
+                            ProsentaseSinode = item.Akun.Sinode,
                         });
 
                 }

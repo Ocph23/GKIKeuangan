@@ -11,4 +11,13 @@ public class Kas
 
     public string? Catatan{get;set;}
 
+    public double Utang => GetUtang();
+
+    private double GetUtang()
+    {
+       if(Akun == null || Akun.Tipe== AkunType.Pengeluaran)
+            return 0;
+
+        return (Akun.YPK + Akun.Sinode + Akun.Klasis) / 100 * Jumlah;
+    }
 }

@@ -29,33 +29,36 @@
             <MudTh>
                 <MudTableSortLabel SortLabel="tipe_field" T="Akun">Tipe</MudTableSortLabel>
             </MudTh>
-            <MudTh>Jemaat</MudTh>
-            <MudTh>YPK</MudTh>
-            <MudTh>Klasis</MudTh>
-            <MudTh>Sinode</MudTh>
+            <MudTh Style="width:50px">Alokasi Prosentase</MudTh>
+            <MudTh Style="width:50px">Jemaat (%)</MudTh>
+            <MudTh Style="width:50px">YPK (%)</MudTh>
+            <MudTh Style="width:50px">Klasis (%)</MudTh>
+            <MudTh Style="width:50px">Sinode (%)</MudTh>
             <MudTh></MudTh>
         </HeaderContent>
         <RowTemplate>
-                <MudTd DataLabel="kategori">@context.Kategori.Kode</MudTd>
-            <MudTd DataLabel="Nr">@context.Kode</MudTd>
+            <MudTd DataLabel="kategori">@context.Kategori.Kode</MudTd>
+                <MudTd DataLabel="Nr">@context.Kode</MudTd>
                 <MudTd DataLabel="Name">@context.Uraian</MudTd>
                 <MudTd DataLabel="Tipe">@context.Tipe</MudTd>
                 <MudTd DataLabel="Jemaat">
-                    <MudCheckBox @bind-Checked="context.Jemaat"></MudCheckBox>
-                </MudTd>
-                <MudTd DataLabel="YPK">
-                    <MudCheckBox @bind-Checked="context.YPK"></MudCheckBox>
-                </MudTd>
-                <MudTd DataLabel="Klasis">
-                    <MudCheckBox @bind-Checked="context.Klasis"></MudCheckBox>
-                </MudTd>
-                <MudTd DataLabel="Sinode">
-                    <MudCheckBox @bind-Checked="context.Sinode"></MudCheckBox>
-                </MudTd>
-                <MudTd Style="width:150px">
+                @if (context.Tipe == AkunType.Penerimaan)
+                {
+                    <MudCheckBox @bind-Checked="context.AlokasiProsentese"></MudCheckBox>
+                }
+                else
+                {
+                    <MudCheckBox @bind-Checked="context.SetoranWajib"></MudCheckBox>
+                }
+            </MudTd>
+            <MudTd DataLabel="Tipe">@context.Jemaat</MudTd>
+                <MudTd DataLabel="Tipe">@context.YPK</MudTd>
+                <MudTd DataLabel="Tipe">@context.Klasis</MudTd>
+                <MudTd DataLabel="Tipe">@context.Sinode</MudTd>
+                <MudTd Style="width:100px">
                     <AuthorizeView Context="authContext">
-                        <MudIconButton OnClick="@(()=> Edit(context))" Color="Color.Warning" Icon="@Icons.Material.Filled.Edit"></MudIconButton>
-                        <MudIconButton OnClick="@(()=> Delete(context))" Color="Color.Error" Icon="@Icons.Material.Filled.DeleteForever"></MudIconButton>
+                        <MudIconButton Class="m-0 p-0" OnClick="@(()=> Edit(context))" Color="Color.Warning" Icon="@Icons.Material.Filled.Edit"></MudIconButton>
+                        <MudIconButton Class="m-0 p-0" OnClick="@(()=> Delete(context))" Color="Color.Error" Icon="@Icons.Material.Filled.DeleteForever"></MudIconButton>
                     </AuthorizeView>
                 </MudTd>
             </RowTemplate>
