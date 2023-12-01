@@ -1,86 +1,83 @@
-﻿@page "/"
-@page "/dashboard"
+﻿@layout BPPGLayout
+@page "/bppg/kas"
 
-<PageTitle>Index</PageTitle>
-<div class="no-print" style="width:100%; height:80vh; padding:10px; display:flex; ">
-    <MudGrid Spacing="2">
-        <MudItem md="4">
-            <div style="height:100vh; width:100%; display:flex; justify-content:center;align-items:center;flex-direction:column">
-                <img style="width:150px; height:150px; margin:20px" src="logogki.png" />
-                <h4>GEREJA INJILI DI TANAH PAPUA</h4>
-                <h4>KLASIS PORT NUMBAY</h4>
-                <h4>JEMAAT EFRATA KAYU BATU</h4>
-                <div style="display:flex;justify-content:center; align-items:center;flex-direction:column; margin:20px">
-                    <h3>APLIKASI KEUANGAN </h3>
-                </div>
+
+
+<div class="mt-15 no-print">
+
+    <div style="display:flex;justify-content:space-between">
+        <div>
+            <h4>
+                Data Periode Kas
+            </h4>
+        </div>
+      
+    </div>
+
+    <MudTable Class="p-2" ServerData="@(new Func<TableState, Task<TableData<PeriodeKas>>>(ServerReload))" Dense="true" Hover="true"
+              @ref="table">
+        <ToolBarContent>
+            <div style="width:150px !important">
+                <MudSelect Style="width:100px" T="Periode" Label="Periode" ValueChanged="OnSelectPeriode">
+                    @foreach (var item in periodes)
+                    {
+                        <MudSelectItem Value="item">@item.Tahun</MudSelectItem>
+                    }
+                </MudSelect>
             </div>
-        </MudItem>
-        <MudItem md="8">
-            <div class="mt-15 no-print">
-
-                <div class="mb-3" style="display:flex;justify-content:space-between">
-                    <div>
-                        <h4>
-                            Data Periode Kas @periodeText
-                        </h4>
-                    </div>
-
-                </div>
-
-                <MudTable Class="p-2" ServerData="@(new Func<TableState, Task<TableData<PeriodeKas>>>(ServerReload))" Dense="true" Hover="true"
-                          @ref="table">
-                    <HeaderContent>
-                        <MudTh>
-                            <MudTableSortLabel SortLabel="nr_field" T="PeriodeKas">Bulan</MudTableSortLabel>
-                        </MudTh>
-                        <MudTh Style="text-align:right">Saldo Awal</MudTh>
-                        <MudTh Style="text-align:right">Penerimaan</MudTh>
-                        <MudTh Style="text-align:right">Pengeluaran</MudTh>
-                        <MudTh Style="text-align:right">Saldo</MudTh>
-                        <MudTh Style="text-align:right">Status</MudTh>
-                        <MudTh></MudTh>
-                    </HeaderContent>
-                    <RowTemplate>
-                        <MudTd DataLabel="Tanggal">@(Helper.GetBulan(context.Bulan))</MudTd>
-                        <MudTd Style="text-align:right">@context.SaldoLalu.ToString("N2")</MudTd>
-                            <MudTd Style="text-align:right">@context.Penerimaan.ToString("N2")</MudTd>
-                            <MudTd Style="text-align:right">@context.Pengeluaran.ToString("N2")</MudTd>
-                            <MudTd Style="text-align:right">@context.Saldo.ToString("N2")</MudTd>
-                            <MudTd Style="text-align:right">@context.Status</MudTd>
-                            <MudTd Style="text-align:right">
-                                <MudMenu Icon="@Icons.Material.Filled.MoreVert">
-                                    <MudMenuItem OnClick="@(()=>LaporanKas(context))">Detail Kas</MudMenuItem>
-                                    @if (context.Status == StatusKas.Tutup)
-                                {
-                                    <MudMenuItem OnClick="@(()=>ChangeStatus(StatusKas.Ditolak, context))">Tolak</MudMenuItem>
-                                    <MudMenuItem OnClick="@(()=>ChangeStatus(StatusKas.Setujui, context))">Setuju</MudMenuItem>
-                                }
-                            </MudMenu>
-                        </MudTd>
-
-                    </RowTemplate>
-                    <NoRecordsContent>
-                        <MudText>No matching records found</MudText>
-                    </NoRecordsContent>
-                    <LoadingContent>
-                        <MudText>Loading...</MudText>
-                    </LoadingContent>
-                    <PagerContent>
-                        <MudTablePager />
-                    </PagerContent>
-                </MudTable>
+            <MudSpacer></MudSpacer>
+            <div>
+                <MudMenu Label="@(periodeSelected==null?"":periodeSelected.Status== StatusKas.Tutup?"MENUNGGU PERSETUJUAN":
+                periodeSelected.Status== StatusKas.Baru?"Aktif":periodeSelected.Status.ToString())" Color="@Color.Warning">
+                    @if (periodeSelected.Status == StatusKas.Tutup)
+                    {
+                        <MudMenuItem OnClick="@(()=>Persetujuan(StatusKas.Setujui))">Setuju</MudMenuItem>
+                        <MudMenuItem OnClick="@(()=>Persetujuan(StatusKas.Ditolak))">Tolak</MudMenuItem>
+                    }
+                </MudMenu>
             </div>
+        </ToolBarContent>
+        <HeaderContent>
+            <MudTh>
+                <MudTableSortLabel SortLabel="nr_field" T="PeriodeKas">Bulan</MudTableSortLabel>
+            </MudTh>
+            <MudTh Style="text-align:right">Saldo Awal</MudTh>
+            <MudTh Style="text-align:right">Penerimaan</MudTh>
+            <MudTh Style="text-align:right">Pengeluaran</MudTh>
+            <MudTh Style="text-align:right">Saldo</MudTh>
+            <MudTh Style="text-align:right">Status</MudTh>
+            <MudTh></MudTh>
+        </HeaderContent>
+        <RowTemplate>
+            <MudTd DataLabel="Tanggal">@(Helper.GetBulan(context.Bulan))</MudTd>
+                <MudTd Style="text-align:right">@context.SaldoLalu.ToString("N2")</MudTd>
+                <MudTd Style="text-align:right">@context.Penerimaan.ToString("N2")</MudTd>
+                <MudTd Style="text-align:right">@context.Pengeluaran.ToString("N2")</MudTd>
+                <MudTd Style="text-align:right">@context.Saldo.ToString("N2")</MudTd>
+                <MudTd Style="text-align:right">@context.Status</MudTd>
+                <MudTd Style="text-align:right">
+                    <MudMenu Icon="@Icons.Material.Filled.MoreVert">
+                        <MudMenuItem OnClick="@(()=>LaporanKas(context))">Detail Kas</MudMenuItem>
+                        @if (context.Status == StatusKas.Tutup)
+                    {
+                        <MudMenuItem OnClick="@(()=>ChangeStatus(StatusKas.Ditolak, context))">Tolak</MudMenuItem>
+                        <MudMenuItem OnClick="@(()=>ChangeStatus(StatusKas.Setujui, context))">Setuju</MudMenuItem>
+                    }
+                </MudMenu>
+            </MudTd>
 
-        </MudItem>
-    </MudGrid>
-
+        </RowTemplate>
+        <NoRecordsContent>
+            <MudText>No matching records found</MudText>
+        </NoRecordsContent>
+        <LoadingContent>
+            <MudText>Loading...</MudText>
+        </LoadingContent>
+        <PagerContent>
+            <MudTablePager />
+        </PagerContent>
+    </MudTable>
 </div>
-
-
-
-
-
-
 
 @if (kasBulanPrint != null && kasBulanPrint.Value)
 {
@@ -120,26 +117,15 @@
     AuthenticationState authState;
 
     PeriodeKas periodeKasSelected;
-    string periodeText;
+
     protected override async Task OnInitializedAsync()
     {
         periodes = await PeriodeService.Get();
 
         authState = await authStateProvider.GetAuthenticationStateAsync();
-
-        var periodeActive = await PeriodeService.GetActive();
-        if (periodeActive != null)
-        {
-            periodeText = periodeActive.Tahun.ToString();
-            OnSelectPeriode(periodeActive);
-        }
-
     }
     async Task OnSelectPeriode(Periode p)
     {
-
-        await Task.Delay(1000);
-
         if (p == null)
             return;
 

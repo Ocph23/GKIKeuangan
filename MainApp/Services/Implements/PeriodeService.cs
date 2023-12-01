@@ -47,13 +47,19 @@ public class PeriodeService : IPeriodeService
         }
     }
 
+    public Task<Periode> GetActive()
+    {
+        var data = dbcontext.DataPeriode.SingleOrDefault(x => x.Status != Models.StatusKas.Setujui);
+        return Task.FromResult(data);
+    }
+
     public Task<Periode> GetById(int id)
     {
         try
         {
             var data = dbcontext.DataPeriode
                 .Include(x => x.RencanaAnggaranBalanja)
-                .ThenInclude(x => x.Akun).ThenInclude(x=>x.Kategori)
+                .ThenInclude(x => x.Akun).ThenInclude(x => x.Kategori)
                 .SingleOrDefault(x => x.Id == id);
             return Task.FromResult(result: data)!;
         }
@@ -70,10 +76,16 @@ public class PeriodeService : IPeriodeService
             if (model.Tahun > DateTime.Now.Year)
                 throw new SystemException("Belum saatnya membuat periode baru !");
 
-            var oldPeriode = dbcontext.DataPeriode.SingleOrDefault(x => x.Aktif);
+            var oldPeriode = dbcontext.DataPeriode.OrderByDescending(x => x.Id).FirstOrDefault();
             if (oldPeriode != null)
             {
-                oldPeriode.Aktif = false;
+                if (oldPeriode.Status != Models.StatusKas.Setujui)
+                    throw new SystemException("Periode Sebelumnya Belum Disetujui !");
+
+                var lastPeriode = dbcontext.PeriodeKas.OrderByDescending(x => x.Id).First();
+                lastPeriode.TanggalPenutupan = DateOnly.FromDateTime(DateTime.Now);
+                oldPeriode.UtangAkhir = lastPeriode.Utang;
+                oldPeriode.SaldoAkhir = lastPeriode.Saldo;
             }
 
             dbcontext.DataPeriode.Add(model);
@@ -98,11 +110,21 @@ public class PeriodeService : IPeriodeService
     {
         try
         {
+
+            if (model.Status == Models.StatusKas.Tutup)
+            {
+                var pKas = dbcontext.PeriodeKas.Where(x => x.PeriodeId == model.Id && x.Status != Models.StatusKas.Setujui).Count();
+                if (pKas > 0)
+                {
+                    throw new SystemException("Ada Periode Kas Belum Di Setujui BPPK ");
+                }
+            }
+
             var data = dbcontext.DataPeriode.SingleOrDefault(x => x.Id == id);
             ArgumentNullException.ThrowIfNull(data, "Data Tidak Ditemukan");
 
             data.Tahun = model.Tahun;
-            data.Aktif = model.Aktif;
+            data.Status = model.Status;
             dbcontext.SaveChanges();
             return Task.FromResult(true);
         }

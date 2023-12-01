@@ -4,11 +4,12 @@ using Microsoft.EntityFrameworkCore;
 
 namespace MainApp.Data
 {
-    public class ApplicationDbContext : IdentityDbContext
+    public class ApplicationDbContext : IdentityDbContext<ApplicationUser>
     {
         public ApplicationDbContext(DbContextOptions<ApplicationDbContext> options)
             : base(options)
         {
+            AppContext.SetSwitch("Npgsql.EnableLegacyTimestampBehavior", true);
         }
         public DbSet<Akun> DataAkun { get; set; }
         public DbSet<Kas> DataKas { get; set; }

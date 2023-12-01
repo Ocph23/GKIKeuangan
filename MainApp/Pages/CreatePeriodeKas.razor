@@ -4,7 +4,7 @@
             <MudForm Model="@model" @ref="@form" Validation="@(orderValidator.ValidateValue)" ValidationDelay="0">
                 <MudCardContent>
 
-                    <MudSelect T="int" Label="Periode Kas (Bulan)" For="@(() => model.Bulan)" @bind-Value="model.Bulan">
+                    <MudSelect T="int" Disabled="@(model.Id>0)" Label="Periode Kas (Bulan)" For="@(() => model.Bulan)" @bind-Value="model.Bulan">
                         @foreach (var item in Enumerable.Range(1, 12))
                         {
                             <MudSelectItem Value="item">@item.ToString()</MudSelectItem>

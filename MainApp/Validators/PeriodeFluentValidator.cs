@@ -2,13 +2,16 @@
 
 namespace MainApp.Validators
 {
-    public class PeriodeFluentValidator:AbstractValidator<Periode>
+    public class PeriodeFluentValidator : AbstractValidator<Periode>
     {
 
         public PeriodeFluentValidator()
         {
             RuleFor(x => x.Tahun)
                 .NotEmpty();
+
+            RuleFor(x => x.Status).Equal(Models.StatusKas.Baru).When(x => x.Id <= 0);
+
         }
 
         public Func<object, string, Task<IEnumerable<string>>> ValidateValue => async (model, propertyName) =>

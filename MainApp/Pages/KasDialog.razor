@@ -4,7 +4,7 @@
             <MudForm Model="@model" @ref="@form" Validation="@(orderValidator.ValidateValue)" ValidationDelay="0">
                 <MudCardContent>
 
-                    <MudDatePicker Label="Flexible Date" Editable="true" @bind-Date="model.Tanggal" ImmediateText="true"
+                    <MudDatePicker Label="Tanggal" Editable="true" @bind-Date="model.Tanggal" ImmediateText="true"
                                    Placeholder="day.month.year" DateFormat="dd/MM/yyyy HH:mm" />
 
 
@@ -85,6 +85,14 @@
             {
                 if (model.Id <= 0)
                 {
+                    var periodeKas = await kasService.GetActivePeriodeKas();
+                    if (periodeKas == null)
+                        throw new SystemException("Tidak Ada Periode Kas Aktif !");
+
+                    var tgl = DateOnly.FromDateTime(model.Tanggal.Value);
+                    if (tgl < periodeKas.Mulai || tgl > periodeKas.Berakhir)
+                        throw new SystemException("Tanggal Transaksi Tidak Valid !");
+
                     var result = await kasService.Post(model);
                     Snackbar.Add("Tersimpan !");
                     MudDialog.Close(DialogResult.Ok(result));

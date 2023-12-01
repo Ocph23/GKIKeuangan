@@ -18,4 +18,6 @@ public interface IKasService
     Task<PeriodeKas> GetActivePeriodeKas();
     Task<bool> TutupKas(PeriodeKas model, DateOnly tanggalPenutupan);
     Task<PeriodeKas> BuatKasBaru(PeriodeKas model);
+    Task<bool> PersetujuanPeriodeKas(PeriodeKas model);
+    Task<PeriodeKas> GetLastPeriodeKas(PeriodeKas model);
 }

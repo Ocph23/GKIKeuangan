@@ -1,0 +1,13 @@
+﻿@media print{
+
+
+    td, tr, th {
+        padding: 2px;
+        border: 1px solid silver;
+        font-size: 8px;
+    }
+
+    th {
+        text-align: center;
+    }
+}

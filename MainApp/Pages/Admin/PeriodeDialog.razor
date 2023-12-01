@@ -1,0 +1,94 @@
+﻿<MudDialog>
+    <DialogContent>
+        <MudCard>
+            <MudForm Model="@model" @ref="@form" Validation="@(orderValidator.ValidateValue)" ValidationDelay="0">
+                <MudCardContent>
+                    <MudTextField @bind-Value="model.Tahun"
+                                  For="@(() => model.Tahun)"
+                                  Immediate="true"
+                                  Label="Tahun" />
+
+                    <MudTextField @bind-Value="model.Catatan"
+                                  For="@(() => model.Catatan)"
+                                  Immediate="true"
+                                  Label="Catatan" />
+
+
+                    <MudSelect  T="StatusKas" @bind-Value="model.Status" For="@(()=>model.Status)">
+                        @foreach (var item in Enum.GetValues(typeof(StatusKas)).Cast<StatusKas>().Where(x=>x != StatusKas.Setujui && x != StatusKas.Ditolak))
+                        {
+                            <MudSelectItem Value="item">@item</MudSelectItem>
+                        }
+                    </MudSelect>
+                </MudCardContent>
+            </MudForm>
+            <MudCardActions>
+                <MudButton Variant="Variant.Filled" Color="Color.Primary" Class="ml-auto" OnClick="@(async () => await Submit())">Simpan</MudButton>
+                <MudButton OnClick="Cancel">Cancel</MudButton>
+            </MudCardActions>
+        </MudCard>
+    </DialogContent>
+</MudDialog>
+
+
+
+@using FluentValidation
+@using MainApp.Validators
+
+@inject IPeriodeService kategoriService
+
+@code {
+    [Inject] ISnackbar Snackbar { get; set; }
+    [CascadingParameter] MudDialogInstance MudDialog { get; set; }
+
+    [Parameter]
+    public Periode model { get; set; } = new Periode();
+
+    MudForm form;
+    PeriodeFluentValidator orderValidator = new PeriodeFluentValidator();
+
+
+    void Cancel() => MudDialog.Cancel();
+
+    protected override Task OnInitializedAsync()
+    {
+        if (model.Id <= 0)
+        {
+            model.Tahun = DateTime.Now.Year;
+        }
+        return base.OnInitializedAsync();
+    }
+
+
+
+
+
+    private async Task Submit()
+    {
+        await form.Validate();
+        if (form.IsValid)
+        {
+            try
+            {
+                if (model.Id <= 0)
+                {
+                    var result = await kategoriService.Post(model);
+                    Snackbar.Add("Tersimpan !");
+                    MudDialog.Close(DialogResult.Ok(result));
+                }
+                else
+                {
+                    var result = await kategoriService.Put(model.Id, model);
+                    Snackbar.Add("Tersimpan !");
+                    MudDialog.Close(DialogResult.Ok(result));
+                }
+            }
+            catch (Exception ex)
+            {
+                Snackbar.Add(ex.Message, MudBlazor.Severity.Error);
+            }
+
+
+        }
+    }
+}

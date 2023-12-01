@@ -1,0 +1,53 @@
+﻿@inherits LayoutComponentBase
+<MudThemeProvider />
+<MudDialogProvider />
+<MudSnackbarProvider />
+
+@attribute [Authorize(Roles ="BPPG")]
+
+<MudLayout>
+    <MudAppBar Color="Color.Warning " Elevation="1">
+        <MudIconButton Icon="@Icons.Material.Filled.Menu" Color="Color.Inherit" Edge="Edge.Start" OnClick="@((e) => DrawerToggle())" />
+        <MudSpacer />
+        <LoginDisplay />
+    </MudAppBar>
+    <MudDrawer @bind-Open="_drawerOpen" Elevation="2">
+        <MudPaper Width="250px" Class="d-inline-flex py-3" Elevation="0">
+            <MudNavMenu Color="Color.Warning" Class="mud-width-full">
+                <MudText Typo="Typo.h6" Class="px-4">Material</MudText>
+                <MudText Typo="Typo.body2" Class="px-4 mud-text-secondary">Icons</MudText>
+                <MudDivider Class="my-2" />
+                <MudNavLink Href="/bppg/dashboard" Icon="@Icons.Material.Filled.Dashboard">Dashboard</MudNavLink>
+                <MudNavLink Href="/bppg/rencanaanggaran" Icon="@Icons.Material.Filled.Receipt">Rencana Anggaran</MudNavLink>
+                <MudNavLink Href="/bppg/kas" Icon="@Icons.Material.Filled.Money">Periode Kas</MudNavLink>
+                <MudNavGroup Title="Laporan" Icon="@Icons.Material.Filled.Report" Expanded="true">
+                    <MudNavLink Href="/bppg/realisasi" Icon="@Icons.Material.Filled.Storage">Realiasi Penerimaan &amp; Belanja</MudNavLink>
+                    <MudNavLink Href="/bppg/kewajiban" Icon="@Icons.Material.Filled.Storage">Kewajiban/Utang</MudNavLink>
+                </MudNavGroup>
+            </MudNavMenu>
+        </MudPaper>
+    </MudDrawer>
+    <MudMainContent Class="p-3 ">
+        @Body
+    </MudMainContent>
+</MudLayout>
+
+@inject AuthenticationStateProvider authStateProvider
+@inject NavigationManager Navigation
+@code {
+
+    bool _drawerOpen = true;
+    protected override async Task OnInitializedAsync()
+    {
+        var authState = await authStateProvider.GetAuthenticationStateAsync();
+        if (authState.User == null || !authState.User.Identity.IsAuthenticated || !authState.User.IsInRole("BPPG"))
+        {
+            Navigation.NavigateTo("/Identity/Account/Login", true);
+        }
+       
+    }
+    void DrawerToggle()
+    {
+        _drawerOpen = !_drawerOpen;
+    }
+}

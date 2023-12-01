@@ -1,0 +1,86 @@
+﻿<MudDialog>
+    <DialogContent>
+        <MudCard>
+            <MudForm Model="@model" @ref="@form" Validation="@(orderValidator.ValidateValue)" ValidationDelay="0">
+                <MudCardContent>
+                    <MudTextField @bind-Value="model.UserName"
+                                  For="@(() => model.UserName)"
+                                  Immediate="true"
+                                  Label="User Name" />
+
+                    <MudTextField @bind-Value="model.Nama"
+                                  For="@(() => model.Nama)"
+                                  Immediate="true"
+                                  Label="Nama" />
+
+                    <MudSelect Disabled="@(!string.IsNullOrEmpty(model.Id))" T="string" @bind-Value="model.Role" For="@(()=>model.Role)">
+                        @foreach (var role in roles)
+                        {
+                            <MudSelectItem Value="role">@role</MudSelectItem>
+                        }
+                    </MudSelect>
+
+                    <MudCheckBox @bind-Checked="model.Confirm"
+                                 For="@(() => model.Confirm)"
+                                 Label="Aktif" />
+                </MudCardContent>
+            </MudForm>
+            <MudCardActions>
+                <MudButton Variant="Variant.Filled" Color="Color.Primary" Class="ml-auto" OnClick="@(async () => await Submit())">Simpan</MudButton>
+                <MudButton OnClick="Cancel">Cancel</MudButton>
+            </MudCardActions>
+        </MudCard>
+    </DialogContent>
+</MudDialog>
+
+
+
+@using FluentValidation
+@using MainApp.Validators
+
+@inject IUserService userService
+
+@code {
+    [Inject] ISnackbar Snackbar { get; set; }
+    [CascadingParameter] MudDialogInstance MudDialog { get; set; }
+
+    [Parameter]
+    public UserModel model { get; set; } = new UserModel() { Confirm = true };
+
+    MudForm form;
+    UserFluentValidator orderValidator = new UserFluentValidator();
+
+    IEnumerable<string> roles = new List<string>() { "Admin", "BPPG" };
+    void Cancel() => MudDialog.Cancel();
+
+    private async Task Submit()
+    {
+        await form.Validate();
+
+        if (form.IsValid)
+        {
+
+            try
+            {
+                if (string.IsNullOrEmpty(model.Id))
+                {
+                    var result = await userService.Post(model);
+                    Snackbar.Add("Tersimpan !");
+                    MudDialog.Close(DialogResult.Ok(result));
+                }
+                else
+                {
+                    var result = await userService.Put(model.Id, model);
+                    Snackbar.Add("Tersimpan !");
+                    MudDialog.Close(DialogResult.Ok(result));
+                }
+            }
+            catch (Exception ex)
+            {
+                Snackbar.Add(ex.Message, MudBlazor.Severity.Error);
+            }
+
+
+        }
+    }
+}

@@ -1,0 +1,216 @@
+﻿@layout BPPGLayout
+@page "/bppg/rencanaanggaran"
+@using MainApp.Models
+@using MainApp.Pages.Reports
+
+<div class="mt-15 no-print">
+    <div class="d-flex justify-content-between align-items-center">
+        <h3>Rencana Anggaran Dan Belanja</h3>
+        <div>
+            <MudIconButton Disabled="@(dataPrint.Count()<=0)" OnClick="Print" Icon="@Icons.Material.Filled.Print" Variant="Variant.Outlined" Color="Color.Warning" Size="Size.Medium" />
+        </div>
+    </div>
+    <MudTable ServerData="@(new Func<TableState, Task<TableData<AnggaranBelanjaItem>>>(ServerReload))" Dense="true" Hover="true"
+              @ref="table">
+        <ToolBarContent>
+            <MudSelect T="Periode" ValueChanged="OnSelectPeriode">
+                @foreach (var item in periodes)
+                {
+                    <MudSelectItem Value="item">@item.Tahun</MudSelectItem>
+                }
+            </MudSelect>
+            <MudSpacer />
+            <MudTextField T="string" ValueChanged="@(s=>OnSearch(s))" Placeholder="Search" Adornment="Adornment.Start"
+                          AdornmentIcon="@Icons.Material.Filled.Search" IconSize="Size.Medium" Class="mt-0"></MudTextField>
+        </ToolBarContent>
+        <HeaderContent>
+            <MudTh>
+                <MudTableSortLabel SortLabel="nr_field" T="AnggaranBelanjaItem">Kode Akun</MudTableSortLabel>
+            </MudTh>
+            <MudTh>
+                <MudTableSortLabel T="AnggaranBelanjaItem">Akun</MudTableSortLabel>
+            </MudTh>
+            <MudTh>
+                <MudTableSortLabel T="AnggaranBelanjaItem">Kegiatan</MudTableSortLabel>
+            </MudTh>
+            <MudTh>
+                <MudTableSortLabel T="Kategori">Nilai</MudTableSortLabel>
+            </MudTh>
+            <MudTh>
+                <MudTableSortLabel T="AnggaranBelanjaItem">Jumlah</MudTableSortLabel>
+            </MudTh>
+            <MudTh></MudTh>
+        </HeaderContent>
+        <RowTemplate>
+            <MudTd DataLabel="Nr">@context.Akun.Kode</MudTd>
+                <MudTd DataLabel="Name">@context.Akun.Uraian</MudTd>
+                <MudTd DataLabel="Kegiatan">
+                    @context.Kegiatan.ToString("N0")
+            </MudTd>
+            <MudTd DataLabel="Nilai">
+                @context.Nilai.ToString("N0")
+            </MudTd>
+            <MudTd DataLabel="Jumlah">@context.Jumlah.ToString("N0")</MudTd>
+            </RowTemplate>
+            <NoRecordsContent>
+                <MudText>No matching records found</MudText>
+            </NoRecordsContent>
+            <LoadingContent>
+                <MudText>Loading...</MudText>
+            </LoadingContent>
+            <PagerContent>
+                <MudTablePager />
+            </PagerContent>
+        </MudTable>
+    </div>
+
+    <RencanaAnggaranPrint Periode="model" Datas="dataPrint" />
+
+@inject IAkunService akunService
+@inject IDialogService DialogService
+@inject IJSRuntime Js
+
+    @code {
+
+
+    [Inject] ISnackbar? Snackbar { get; set; }
+    [Inject] IPeriodeService? PeriodeService { get; set; }
+
+    private IEnumerable<RencanaAnggaranModel> dataPrint = Enumerable.Empty<RencanaAnggaranModel>();
+    private IEnumerable<AnggaranBelanjaItem> pagedData = Enumerable.Empty<AnggaranBelanjaItem>();
+    private IEnumerable<Periode> periodes;
+    private IEnumerable<Akun> akuns;
+    private MudTable<AnggaranBelanjaItem> table;
+
+    private int totalItems;
+    private string searchString;
+
+    Periode model;
+
+    bool IsEditable()
+    {
+        return model != null && model.Status != StatusKas.Setujui;
+    }
+
+
+    protected override async Task OnInitializedAsync()
+    {
+        periodes = await PeriodeService.Get();
+        akuns = await akunService.Get();
+    }
+
+
+    async Task OnSelectPeriode(Periode p)
+    {
+        model = await PeriodeService.GetById(p.Id);
+        if (model != null)
+        {
+            var accountNotInModel = akuns.Where(z => !model.RencanaAnggaranBalanja.Any(x => x.Akun.Id == z.Id));
+            foreach (var item in accountNotInModel)
+            {
+                model.RencanaAnggaranBalanja.Add(new AnggaranBelanjaItem { Kegiatan = 1, Akun = item });
+            }
+
+            await table.ReloadServerData();
+
+            //Print
+            if (accountNotInModel.Count() <= 0)
+            {
+                var d = new List<RencanaAnggaranModel>();
+                foreach (var item in model.RencanaAnggaranBalanja)
+                {
+                    d.Add(new RencanaAnggaranModel(model)
+                        {
+                            KodeKategori = item.Akun.Kategori.Kode,
+                            Kategori = item.Akun.Kategori.Nama,
+                            Kegiatan = item.Kegiatan,
+                            Nilai = item.Nilai,
+                            Kode = item.Akun.Kode,
+                            Uraian = item.Akun.Uraian,
+                            AlokasiPresentase = item.Akun.AlokasiProsentese,
+                            ProsentaseJemaat = item.Akun.Jemaat,
+                            ProsentaseYPK = item.Akun.YPK,
+                            ProsentaseKlasis = item.Akun.Klasis,
+                            ProsentaseSinode = item.Akun.Sinode,
+                        });
+
+                }
+
+                dataPrint = d.ToList();
+            }
+
+
+        }
+
+
+
+
+
+    }
+
+
+    private async Task<TableData<AnggaranBelanjaItem>> ServerReload(TableState state)
+    {
+
+        if (model != null)
+        {
+            IEnumerable<AnggaranBelanjaItem>? data = model.RencanaAnggaranBalanja.OrderBy(x => x.Akun.Kode);
+            await Task.Delay(300);
+            data = data.Where(element =>
+            {
+                if (string.IsNullOrWhiteSpace(searchString))
+                    return true;
+                if (element.Akun.Kode.Contains(searchString, StringComparison.OrdinalIgnoreCase))
+                    return true;
+
+                if (element.Akun.Uraian.Contains(searchString, StringComparison.OrdinalIgnoreCase))
+                    return true;
+
+                return false;
+            }).ToArray();
+            totalItems = data.Count();
+            switch (state.SortLabel)
+            {
+                case "nr_field":
+                    data = data.OrderByDirection(state.SortDirection, o => o.Akun.Kode);
+                    break;
+                case "description_field":
+                    data = data.OrderByDirection(state.SortDirection, o => o.Akun.Uraian);
+                    break;
+            }
+
+
+            pagedData = data.Skip(state.Page * state.PageSize).Take(state.PageSize).ToArray();
+        }
+
+
+        return new TableData<AnggaranBelanjaItem>() { TotalItems = totalItems, Items = pagedData };
+    }
+    private void OnSearch(string text)
+    {
+        searchString = text;
+        table.ReloadServerData();
+    }
+
+    async Task Save()
+    {
+        try
+        {
+            var updated = await PeriodeService.PutAnggaran(model.Id, model);
+            if (updated)
+            {
+                Snackbar.Add("Data Tersimpan ", Severity.Success);
+            }
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add(ex.Message, Severity.Error);
+        }
+    }
+
+    async Task Print()
+    {
+        await Js.InvokeVoidAsync("print");
+    }
+
+}

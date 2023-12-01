@@ -49,11 +49,11 @@
                     <td style="text-align:end">@item.data.Rencana.ToString("N0")</td>
                     @foreach (var x in item.data.Bulan)
                     {
-                        <td style="text-align:end">@x.ToString("N0")</td>
+                        <td style="width:65px; text-align:end">@x.ToString("N0")</td>
                     }
-                    <td style="text-align:end">@item.data.Jumlah.ToString("N0")</td>
-                    <td style="text-align:end">@item.data.Lebih.ToString("N0")</td>
-                    <td style="text-align:end">@item.data.Kurang.ToString("N0")</td>
+                    <td style="width:65px;text-align:end">@item.data.Jumlah.ToString("N0")</td>
+                    <td style="width:65px;text-align:end">@item.data.Lebih.ToString("N0")</td>
+                    <td style="width:65px;text-align:end">@item.data.Kurang.ToString("N0")</td>
                 </tr>
             }
         </table>

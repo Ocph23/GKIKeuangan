@@ -10,7 +10,7 @@
     </div>
     <div style="display:flex;justify-content:center; align-items:center;flex-direction:column; margin:20px">
         <h3>BUKU KAS UMUM GEREJA </h3>
-        <h6 style="font-size:10px">@($"BULAN {Helper.GetBulan(PeriodeKas.Bulan)} {PeriodeKas.Periode.Tahun}")</h6>
+        <h6 style="font-size:10px">@($"BULAN {Helper.GetBulan(PeriodeKas.Bulan).ToUpper()} {PeriodeKas.Periode.Tahun}")</h6>
     </div>
 
     @if (Datas.Count() > 0)
@@ -85,10 +85,4 @@
     {
         return base.OnInitializedAsync();
     }
-
-
-
-
-   
-
 }

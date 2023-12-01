@@ -1,0 +1,487 @@
+﻿
+
+<div class="mt-15 no-print">
+
+    <div class="d-flex justify-content-between align-items-center">
+        <h3>Kas</h3>
+        <MudMenu Label="Menu Kas" Variant="Variant.Outlined" Color="Color.Info">
+
+            @if (authState != null && authState.User.IsInRole("Admin"))
+            {
+
+                @if (periodeSelected != null && (periodeKas.Count(x => x.Status == StatusKas.Setujui) == periodeKas.Count()))
+                {
+                    <MudMenuItem OnClick="BukaPeriodeKas">Buka Periode Kas</MudMenuItem>
+                }
+
+                 @if (periodeKasSelected != null && (periodeKasSelected.Status is StatusKas.Ditolak))
+                {
+                    <MudMenuItem OnClick="AktifkanPeriodeKas">Aktifkan Periode Kas</MudMenuItem>
+                }
+
+                @if (periodeKasSelected != null && (periodeKasSelected.Status is StatusKas.Baru or StatusKas.Ditolak))
+                {
+                    <MudMenuItem OnClick="TutupPeriodeKas">Tutup Periode Kas</MudMenuItem>
+                }
+
+
+                @if (periodeKasSelected != null)
+                {
+                    <MudMenuItem OnClick="LaporanKas">Laporan Kas</MudMenuItem>
+                }
+
+                <MudMenuItem OnClick="LaporanPosisiKas">Laporan Posisi Kas</MudMenuItem>
+
+
+            }
+            else
+            {
+
+
+              
+            }
+
+
+        </MudMenu>
+
+    </div>
+    <MudTable Class="p-2" ServerData="@(new Func<TableState, Task<TableData<Kas>>>(ServerReload))" Dense="true" Hover="true"
+              @ref="table">
+        <ToolBarContent>
+            <MudSelect Style="width:50px" T="Periode" Label="Periode" ValueChanged="OnSelectPeriode">
+                @foreach (var item in periodes)
+                {
+                    <MudSelectItem Value="item">@item.Tahun</MudSelectItem>
+                }
+            </MudSelect>
+            <MudSelect Style="width:60px" Class="ml-2" T="PeriodeKas" Label="Bulan" ValueChanged="OnSelectPeriodeKas">
+                @foreach (var item in periodeKas)
+                {
+                    <MudSelectItem Value="item">@(Helper.GetBulan(item.Bulan))</MudSelectItem>
+                }
+            </MudSelect>
+            @if (periodeKasSelected != null)
+            {
+                <MudAlert Class="ml-2" Severity="@GetStatus()">
+                    @(periodeKasSelected.Status == StatusKas.Baru ? "Aktif" : periodeKasSelected.Status)
+                </MudAlert>
+            }
+            <MudSpacer />
+            <MudTextField T="string" ValueChanged="@(s=>OnSearch(s))" Placeholder="Search" Adornment="Adornment.Start"
+                          AdornmentIcon="@Icons.Material.Filled.Search" IconSize="Size.Medium" Class="mt-0"></MudTextField>
+        </ToolBarContent>
+        <HeaderContent>
+            <MudTh>
+                <MudTableSortLabel SortLabel="nr_field" T="Kas">Tanggal</MudTableSortLabel>
+            </MudTh>
+            <MudTh>
+                <MudTableSortLabel T="Kas">Kode</MudTableSortLabel>
+            </MudTh>
+            <MudTh>
+                <MudTableSortLabel T="Kas">Uraian</MudTableSortLabel>
+            </MudTh>
+            <MudTh Style="text-align:right">
+                <MudTableSortLabel T="Kategori">Penerimaan</MudTableSortLabel>
+            </MudTh>
+            <MudTh Style="text-align:right">
+                <MudTableSortLabel T="Kas">Pengeluaran</MudTableSortLabel>
+            </MudTh>
+            <MudTh></MudTh>
+        </HeaderContent>
+        <RowTemplate>
+            <MudTd DataLabel="Tanggal">@context.Tanggal.ToString()</MudTd>
+                <MudTd DataLabel="Kode">@context.Akun.Kode</MudTd>
+                <MudTd DataLabel="Uraian">@context.Akun.Uraian</MudTd>
+                <MudTd DataLabel="Penerimaan" Style="text-align:right">
+                    @(context.Akun.Tipe == AkunType.Penerimaan ? context.Jumlah.ToString("N2") : "-")
+                </MudTd>
+                <MudTd DataLabel="Pengeluaran" Style="text-align:right">
+                    @(context.Akun.Tipe == AkunType.Pengeluaran ? context.Jumlah.ToString("N2") : "-")
+                </MudTd>
+            </RowTemplate>
+            <NoRecordsContent>
+                <MudText>No matching records found</MudText>
+            </NoRecordsContent>
+            <LoadingContent>
+                <MudText>Loading...</MudText>
+            </LoadingContent>
+            <PagerContent>
+                <MudTablePager />
+            </PagerContent>
+        </MudTable>
+
+        @if (authState != null && authState.User.IsInRole("Admin"))
+    {
+        <MudFab Disabled=@(periodeKasSelected==null || periodeKasSelected.Status!= StatusKas.Baru) OnClick="Add" style="position: fixed; bottom:20px; right:20px" Color="Color.Primary" IconSize="Size.Small"
+                StartIcon="@Icons.Material.Filled.Add" />
+    }
+
+</div>
+
+
+
+@if (periodeKasSelected != null && kasBulanPrint != null)
+{
+
+    @if (kasBulanPrint.Value)
+    {
+        <MainApp.Pages.Reports.KasBulanPrint PeriodeKas="periodeKasSelected" Datas="pagedData" />
+    }
+    else if (periodeModel != null)
+    {
+        <MainApp.Pages.Reports.KutipanPosisiKasPrint PeriodeKas="periodeModel" Datas="DataPrint"></MainApp.Pages.Reports.KutipanPosisiKasPrint>
+    }
+}
+
+
+
+
+@inject IAkunService akunService
+@inject IKasService kasService
+@inject IDialogService DialogService
+@inject IJSRuntime Js
+@inject AuthenticationStateProvider authStateProvider
+
+@code {
+
+    [Inject] ISnackbar? Snackbar { get; set; }
+    [Inject] IPeriodeService? PeriodeService { get; set; }
+
+    private IEnumerable<Kas> pagedData = Enumerable.Empty<Kas>();
+    private IEnumerable<Kas> sources = Enumerable.Empty<Kas>();
+    private IEnumerable<Periode> periodes;
+
+    ICollection<PeriodeKas> periodeKas = new List<PeriodeKas>();
+    private IEnumerable<Akun> akuns;
+    private MudTable<Kas> table;
+
+    private int totalItems;
+    private string searchString;
+
+    bool isDisable = true;
+    Periode periodeSelected;
+    PeriodeKas periodeKasSelected;
+
+    PeriodeKasModel periodeModel;
+
+    bool? kasBulanPrint;
+
+    private List<PosisiKasModel> DataPrint = new List<PosisiKasModel>();
+
+    AuthenticationState authState;
+
+
+    Severity GetStatus()
+    {
+        return periodeKasSelected.Status switch
+        {
+            StatusKas.Setujui => Severity.Success,
+            StatusKas.Tutup => Severity.Warning,
+            StatusKas.Ditolak => Severity.Error,
+            _ => Severity.Normal
+        };
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        periodes = await PeriodeService.Get();
+        akuns = await akunService.Get();
+        authState = await authStateProvider.GetAuthenticationStateAsync();
+    }
+
+
+    async Task OnSelectPeriode(Periode p)
+    {
+        if (p == null)
+            return;
+
+        periodeSelected = p;
+        isDisable = p.Status != StatusKas.Baru;
+        periodeKasSelected = null;
+        kasBulanPrint = null;
+        periodeKas= (await kasService.GetPeriodeKasByPeriodeId(p.Id)).ToList();
+
+    }
+
+    async Task BukaPeriodeKas()
+    {
+
+        var p = await kasService.GetActivePeriodeKas();
+        if (p != null)
+        {
+            Snackbar.Add("Silahkan Tutup Periode Kas Aktif", Severity.Error);
+            return;
+        }
+
+
+        var options = new DialogOptions { MaxWidth = MaxWidth.Small, FullWidth = true, DisableBackdropClick = true, CloseOnEscapeKey = true };
+        var resultDialog = await DialogService.ShowAsync<CreatePeriodeKas>("Tambah", options);
+        var result = await resultDialog.Result;
+        if (result != null)
+        {
+            periodeKasSelected = result.Data as PeriodeKas;
+            periodeKas.Add(periodeKasSelected);
+            await OnSelectPeriodeKas(periodeKasSelected);
+        }
+    }
+
+    async Task TutupPeriodeKas()
+    {
+        var data = new DialogParameters();
+        data.Add("model", periodeKasSelected);
+        var options = new DialogOptions { MaxWidth = MaxWidth.Small, FullWidth = true, DisableBackdropClick = true, CloseOnEscapeKey = true };
+        var resultDialog = await DialogService.ShowAsync<CreatePeriodeKas>("Tutup Periode Kas", data, options);
+        var result = await resultDialog.Result;
+        if (result != null)
+        {
+            periodeKasSelected.Status = StatusKas.Tutup;
+        }
+    }
+
+
+    async Task AktifkanPeriodeKas()
+    {
+        var parameters = new DialogParameters<Dialog>();
+        parameters.Add(x => x.ContentText, "Yakin Aktikan Periode Kas Init ?");
+        parameters.Add(x => x.ButtonText, "Aktifkan");
+        parameters.Add(x => x.Color, Color.Error);
+        var options = new DialogOptions() { CloseButton = true, MaxWidth = MaxWidth.Small };
+        var dialog = await DialogService.ShowAsync<Dialog>("Aktifkan Periode Kas", parameters, options);
+        var result = await dialog.Result;
+        if (!result.Canceled)
+        {
+            try
+            {
+                periodeKasSelected.Status = StatusKas.Baru;
+                var deleted = await kasService.PersetujuanPeriodeKas(periodeKasSelected);
+                if (deleted)
+                {
+                    await table.ReloadServerData();
+                    Snackbar?.Add("Data berhasil diubah !", MudBlazor.Severity.Error);
+                    return;
+                }
+                throw new SystemException("Data tidak berhasil disimpan !");
+            }
+            catch (Exception ex)
+            {
+                Snackbar?.Add(ex.Message, MudBlazor.Severity.Error);
+            }
+        }
+    }
+
+    async Task OnSelectPeriodeKas(PeriodeKas p)
+    {
+        if (p == null)
+            return;
+        periodeKasSelected = p;
+        kasBulanPrint = null;
+        await table.ReloadServerData();
+    }
+
+    async Task LaporanKas()
+    {
+
+        kasBulanPrint = true;
+        if (periodeSelected != null)
+        {
+            try
+            {
+                var periodeLastKas = await kasService.GetLastPeriodeKas(periodeKasSelected);
+                var kas = await kasService.Get(periodeKasSelected.Mulai, periodeKasSelected.Berakhir);
+
+                DataPrint = new List<PosisiKasModel>();
+                DataPrint.Add(new PosisiKasModel()
+                    {
+                        Uraian = "Jumlah Bulan Ini ",
+                        Penerimaan = kas.Where(x => x.Akun.Tipe == AkunType.Penerimaan).Sum(x => x.Jumlah),
+                        Pengeluaran = kas.Where(x => x.Akun.Tipe == AkunType.Pengeluaran).Sum(x => x.Jumlah),
+                    });
+
+                if (periodeLastKas !=null)
+                {
+                    DataPrint.Add(new PosisiKasModel()
+                        {
+                            Uraian = "Jumlah Bulan Lalu ",
+                            Penerimaan = periodeLastKas.Penerimaan,
+                            Pengeluaran = periodeLastKas.Pengeluaran
+                        });
+                }
+
+                var semua = new PosisiKasModel()
+                    {
+                        Uraian = "Jumlah Semua",
+                        Penerimaan = DataPrint.Sum(x => x.Penerimaan),
+                        Pengeluaran = DataPrint.Sum(x => x.Pengeluaran),
+                    };
+                DataPrint.Add(semua);
+
+                DataPrint.Add(new PosisiKasModel()
+                    {
+                        Uraian = "Saldo",
+                        Saldo = semua.Penerimaan - semua.Pengeluaran
+                    });
+
+                await InvokeAsync(() => StateHasChanged());
+
+                await Task.Delay(500);
+                await Js.InvokeVoidAsync("print");
+            }
+            catch (Exception ex)
+            {
+                Snackbar.Add(ex.Message, Severity.Error);
+            }
+        }
+    }
+
+    async Task LaporanPosisiKas()
+    {
+        try
+        {
+            var periodeKas = await kasService.GetPeriodeKasForPosisiKas();
+            var bulainIni = periodeKas.ToArray()[0];
+
+            var kas = await kasService.Get(bulainIni.Mulai, bulainIni.Berakhir);
+
+            periodeModel = new PeriodeKasModel(bulainIni, kas);
+
+            DataPrint = new List<PosisiKasModel>();
+            DataPrint.Add(new PosisiKasModel()
+                {
+                    Uraian = "Jumlah Bulan Ini ",
+                    Penerimaan = periodeModel.Penerimaan,
+                    Pengeluaran = periodeModel.Pengeluaran,
+                });
+            if (periodeKas.Count() == 2)
+            {
+                var bulainlalu = periodeKas.ToArray()[1];
+                DataPrint.Add(new PosisiKasModel()
+                    {
+                        Uraian = "Jumlah Bulan Lalu ",
+                        Penerimaan = bulainlalu.Penerimaan,
+                        Pengeluaran = bulainlalu.Pengeluaran
+                    });
+            }
+
+            var semua = new PosisiKasModel()
+                {
+                    Uraian = "Jumlah Semua",
+                    Penerimaan = DataPrint.Sum(x => x.Penerimaan),
+                    Pengeluaran = DataPrint.Sum(x => x.Pengeluaran),
+                };
+            DataPrint.Add(semua);
+
+            DataPrint.Add(new PosisiKasModel()
+                {
+                    Uraian = "Saldo",
+                    Saldo = semua.Penerimaan - semua.Pengeluaran
+                });
+
+            await InvokeAsync(() => StateHasChanged());
+            kasBulanPrint = false;
+            await Task.Delay(500);
+            await Js.InvokeVoidAsync("print");
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add(ex.Message, Severity.Error);
+        }
+
+    }
+
+
+
+    private async Task<TableData<Kas>> ServerReload(TableState state)
+    {
+        if (periodeKasSelected != null)
+        {
+            IEnumerable<Kas>? data = await kasService.Get(periodeKasSelected.Mulai, periodeKasSelected.Berakhir);
+            await Task.Delay(300);
+            data = data.Where(element =>
+            {
+                if (string.IsNullOrWhiteSpace(searchString))
+                    return true;
+                if (element.Akun.Kode.Contains(searchString, StringComparison.OrdinalIgnoreCase))
+                    return true;
+
+                if (element.Akun.Uraian.Contains(searchString, StringComparison.OrdinalIgnoreCase))
+                    return true;
+
+                return false;
+            }).ToArray();
+            totalItems = data.Count();
+            switch (state.SortLabel)
+            {
+                case "nr_field":
+                    data = data.OrderByDirection(state.SortDirection, o => o.Akun.Kode);
+                    break;
+                case "description_field":
+                    data = data.OrderByDirection(state.SortDirection, o => o.Akun.Uraian);
+                    break;
+            }
+            pagedData = data.Skip(state.Page * state.PageSize).Take(state.PageSize).ToArray();
+        }
+        return new TableData<Kas>() { TotalItems = totalItems, Items = pagedData };
+    }
+    private void OnSearch(string text)
+    {
+        searchString = text;
+        table.ReloadServerData();
+    }
+
+    async Task Add()
+    {
+        var options = new DialogOptions { MaxWidth = MaxWidth.Small, FullWidth = true, DisableBackdropClick = true, CloseOnEscapeKey = true };
+        var resultDialog = await DialogService.ShowAsync<KasDialog>("Tambah", options);
+        var result = await resultDialog.Result;
+        if (result != null)
+        {
+            await table.ReloadServerData();
+        }
+    }
+
+
+    async Task Edit(Kas model)
+    {
+        var data = new DialogParameters();
+        data.Add("model", model);
+        var options = new DialogOptions { MaxWidth = MaxWidth.Small, FullWidth = true, DisableBackdropClick = true, CloseOnEscapeKey = true };
+        var resultDialog = await DialogService.ShowAsync<KasDialog>("Tambah", data, options);
+        var result = await resultDialog.Result;
+        if (result != null)
+        {
+            await table.ReloadServerData();
+        }
+    }
+
+    async Task Delete(Kas model)
+    {
+
+        var parameters = new DialogParameters<Dialog>();
+        parameters.Add(x => x.ContentText, "Yakin Hapus Data ?");
+        parameters.Add(x => x.ButtonText, "Delete");
+        parameters.Add(x => x.Color, Color.Error);
+        var options = new DialogOptions() { CloseButton = true, MaxWidth = MaxWidth.Small };
+        var dialog = await DialogService.ShowAsync<Dialog>("Delete", parameters, options);
+        var result = await dialog.Result;
+        if (!result.Canceled)
+        {
+            try
+            {
+                var deleted = await kasService.Delete(model.Id);
+                if (deleted)
+                {
+                    await table.ReloadServerData();
+                    Snackbar?.Add("Data berhasil dihapus !", MudBlazor.Severity.Error);
+                    return;
+                }
+                throw new SystemException("Data tidak berhasil disimpan !");
+            }
+            catch (Exception ex)
+            {
+                Snackbar?.Add(ex.Message, MudBlazor.Severity.Error);
+            }
+
+
+        }
+    }
+}

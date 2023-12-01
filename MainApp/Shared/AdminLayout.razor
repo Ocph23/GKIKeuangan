@@ -3,11 +3,17 @@
 <MudDialogProvider />
 <MudSnackbarProvider />
 
+@attribute [Authorize(Roles ="Admin")]
+
 <MudLayout>
     <MudAppBar Color="Color.Warning " Elevation="1">
+        <MudIconButton Icon="@Icons.Material.Filled.Menu" Color="Color.Inherit" Edge="Edge.Start" OnClick="@((e) => DrawerToggle())" />
         <MudSpacer />
         <LoginDisplay />
     </MudAppBar>
+    <MudDrawer @bind-Open="_drawerOpen" Elevation="2">
+        <NavMenu />
+    </MudDrawer>
     <MudMainContent Class="p-3 ">
         @Body
     </MudMainContent>
@@ -21,18 +27,9 @@
     protected override async Task OnInitializedAsync()
     {
         var authState = await authStateProvider.GetAuthenticationStateAsync();
-        if (authState.User.Identity.IsAuthenticated)
+        if (authState.User == null || !authState.User.Identity.IsAuthenticated || !authState.User.IsInRole("Admin"))
         {
-            if (authState.User.IsInRole("Admin"))
-            {
-                Navigation.NavigateTo("/admin", true);
-            }
-
-            if (authState.User.IsInRole("BPPG"))
-            {
-                Navigation.NavigateTo("/bppg", true);
-            }
-
+            Navigation.NavigateTo("/Identity/Account/Login", true);
         }
     }
     void DrawerToggle()
